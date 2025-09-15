@@ -15,7 +15,13 @@ import {
   OptimizationCriteriaSchema,
   SequentialThinkingRequestSchema,
   ToolChainAnalysisSchema,
+  ListMCPServersSchema,
+  AnalyzeToolsSchema,
+  GenerateRouteSuggestionsSchema,
+  AnalyzeWithSequentialThinkingSchema,
+  GetToolChainAnalysisSchema,
 } from './types.js';
+import { getToolInputSchema } from './schema-utils.js';
 
 export class ChainingMCPServer {
   private server: Server;
@@ -56,114 +62,27 @@ export class ChainingMCPServer {
           {
             name: 'list_mcp_servers',
             description: 'List all discovered MCP servers on the system',
-            inputSchema: {
-              type: 'object',
-              properties: {},
-            },
+            inputSchema: getToolInputSchema(ListMCPServersSchema),
           },
           {
             name: 'analyze_tools',
             description: 'Analyze available tools from discovered MCP servers',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                serverName: {
-                  type: 'string',
-                  description: 'Optional: filter by specific server name',
-                },
-                category: {
-                  type: 'string',
-                  description: 'Optional: filter by tool category',
-                },
-              },
-            },
+            inputSchema: getToolInputSchema(AnalyzeToolsSchema),
           },
           {
             name: 'generate_route_suggestions',
             description: 'Generate optimal route suggestions for a given task',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                task: {
-                  type: 'string',
-                  description: 'The task or problem to solve',
-                },
-                criteria: {
-                  type: 'object',
-                  description: 'Optimization criteria',
-                  properties: {
-                    prioritizeSpeed: { type: 'boolean' },
-                    prioritizeSimplicity: { type: 'boolean' },
-                    prioritizeReliability: { type: 'boolean' },
-                    maxComplexity: { type: 'number' },
-                    maxDuration: { type: 'number' },
-                    requiredCapabilities: { type: 'array', items: { type: 'string' } },
-                    excludedTools: { type: 'array', items: { type: 'string' } },
-                  },
-                },
-              },
-              required: ['task'],
-            },
+            inputSchema: getToolInputSchema(GenerateRouteSuggestionsSchema),
           },
           {
             name: 'analyze_with_sequential_thinking',
             description: 'Analyze complex workflows using sequential thinking',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                problem: {
-                  type: 'string',
-                  description: 'The problem to analyze',
-                },
-                criteria: {
-                  type: 'object',
-                  description: 'Optimization criteria',
-                  properties: {
-                    prioritizeSpeed: { type: 'boolean' },
-                    prioritizeSimplicity: { type: 'boolean' },
-                    prioritizeReliability: { type: 'boolean' },
-                    maxComplexity: { type: 'number' },
-                    maxDuration: { type: 'number' },
-                    requiredCapabilities: { type: 'array', items: { type: 'string' } },
-                    excludedTools: { type: 'array', items: { type: 'string' } },
-                  },
-                },
-                maxThoughts: {
-                  type: 'number',
-                  description: 'Maximum number of thoughts for sequential analysis',
-                  minimum: 1,
-                  maximum: 20,
-                },
-              },
-              required: ['problem'],
-            },
+            inputSchema: getToolInputSchema(AnalyzeWithSequentialThinkingSchema),
           },
           {
             name: 'get_tool_chain_analysis',
             description: 'Get comprehensive analysis of available tools and suggested routes',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                input: {
-                  type: 'string',
-                  description: 'Input description for analysis',
-                },
-                criteria: {
-                  type: 'object',
-                  description: 'Optimization criteria',
-                  properties: {
-                    prioritizeSpeed: { type: 'boolean' },
-                    prioritizeSimplicity: { type: 'boolean' },
-                    prioritizeReliability: { type: 'boolean' },
-                    maxComplexity: { type: 'number' },
-                    maxDuration: { type: 'number' },
-                    requiredCapabilities: { type: 'array', items: { type: 'string' } },
-                    excludedTools: { type: 'array', items: { type: 'string' } },
-                  },
-                },
-              },
-              required: ['input'],
-            },
+            inputSchema: getToolInputSchema(GetToolChainAnalysisSchema),
           },
         ],
       };
@@ -330,7 +249,8 @@ export class ChainingMCPServer {
    * Handle analyze tools request
    */
   private async handleAnalyzeTools(args: any) {
-    const { serverName, category } = args;
+    const validatedArgs = AnalyzeToolsSchema.parse(args);
+    const { serverName, category } = validatedArgs;
     let tools = this.discovery.getTools();
 
     if (serverName) {
@@ -370,7 +290,8 @@ export class ChainingMCPServer {
    * Handle generate route suggestions request
    */
   private async handleGenerateRouteSuggestions(args: any) {
-    const { task, criteria = {} } = args;
+    const validatedArgs = GenerateRouteSuggestionsSchema.parse(args);
+    const { task, criteria = {} } = validatedArgs;
     
     // Validate criteria
     const validatedCriteria = OptimizationCriteriaSchema.parse(criteria);
@@ -410,7 +331,8 @@ export class ChainingMCPServer {
    * Handle sequential thinking analysis request
    */
   private async handleSequentialThinkingAnalysis(args: any) {
-    const { problem, criteria = {}, maxThoughts = 10 } = args;
+    const validatedArgs = AnalyzeWithSequentialThinkingSchema.parse(args);
+    const { problem, criteria = {}, maxThoughts = 10 } = validatedArgs;
     
     // Validate criteria
     const validatedCriteria = OptimizationCriteriaSchema.parse(criteria);
@@ -460,7 +382,8 @@ export class ChainingMCPServer {
    * Handle tool chain analysis request
    */
   private async handleToolChainAnalysis(args: any) {
-    const { input, criteria = {} } = args;
+    const validatedArgs = GetToolChainAnalysisSchema.parse(args);
+    const { input, criteria = {} } = validatedArgs;
     
     // Validate criteria
     const validatedCriteria = OptimizationCriteriaSchema.parse(criteria);

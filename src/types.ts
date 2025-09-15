@@ -72,6 +72,32 @@ export const ToolChainAnalysisSchema = z.object({
   }),
 });
 
+// Tool Input Schemas for MCP Server
+export const ListMCPServersSchema = z.object({
+  // No parameters needed
+});
+
+export const AnalyzeToolsSchema = z.object({
+  serverName: z.string().optional().describe('Optional: filter by specific server name'),
+  category: z.string().optional().describe('Optional: filter by tool category'),
+});
+
+export const GenerateRouteSuggestionsSchema = z.object({
+  task: z.string().describe('The task or problem to solve'),
+  criteria: OptimizationCriteriaSchema.optional().describe('Optimization criteria'),
+});
+
+export const AnalyzeWithSequentialThinkingSchema = z.object({
+  problem: z.string().describe('The problem to analyze'),
+  criteria: OptimizationCriteriaSchema.optional().describe('Optimization criteria'),
+  maxThoughts: z.number().min(1).max(20).default(10).describe('Maximum number of thoughts for sequential analysis'),
+});
+
+export const GetToolChainAnalysisSchema = z.object({
+  input: z.string().describe('Input description for analysis'),
+  criteria: OptimizationCriteriaSchema.optional().describe('Optimization criteria'),
+});
+
 // Type exports
 export type MCPServerInfo = z.infer<typeof MCPServerInfoSchema>;
 export type ToolInfo = z.infer<typeof ToolInfoSchema>;
@@ -79,3 +105,8 @@ export type RouteSuggestion = z.infer<typeof RouteSuggestionSchema>;
 export type OptimizationCriteria = z.infer<typeof OptimizationCriteriaSchema>;
 export type SequentialThinkingRequest = z.infer<typeof SequentialThinkingRequestSchema>;
 export type ToolChainAnalysis = z.infer<typeof ToolChainAnalysisSchema>;
+export type ListMCPServersInput = z.infer<typeof ListMCPServersSchema>;
+export type AnalyzeToolsInput = z.infer<typeof AnalyzeToolsSchema>;
+export type GenerateRouteSuggestionsInput = z.infer<typeof GenerateRouteSuggestionsSchema>;
+export type AnalyzeWithSequentialThinkingInput = z.infer<typeof AnalyzeWithSequentialThinkingSchema>;
+export type GetToolChainAnalysisInput = z.infer<typeof GetToolChainAnalysisSchema>;
