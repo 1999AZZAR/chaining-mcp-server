@@ -1,0 +1,67 @@
+{
+  "configPaths": [
+    "~/.cursor/mcp.json",
+    "~/.config/mcp/servers.json",
+    "~/.mcp/servers.json",
+    "./mcp-servers.json",
+    "./.mcp/servers.json"
+  ],
+  "essentialServers": [
+    {
+      "name": "sequential-thinking",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "env": {},
+      "description": "Sequential thinking analysis MCP server",
+      "version": "1.0.0",
+      "capabilities": {
+        "tools": true,
+        "resources": false,
+        "prompts": false
+      }
+    }
+  ],
+  "fallbackTools": [
+    {
+      "serverPattern": "filesystem|file",
+      "tools": [
+        {
+          "name": "read_file",
+          "description": "Read contents of a file",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string", "description": "Path to the file" }
+            },
+            "required": ["path"]
+          },
+          "category": "filesystem",
+          "estimatedComplexity": 2,
+          "estimatedDuration": 100
+        }
+      ]
+    }
+  ],
+  "complexityRules": [
+    { "pattern": "read|get|list", "complexity": 2, "description": "Simple read operations" },
+    { "pattern": "write|create|update", "complexity": 3, "description": "Write operations" },
+    { "pattern": "search|find|query", "complexity": 4, "description": "Search operations" },
+    { "pattern": "execute|run|command", "complexity": 5, "description": "Command execution" },
+    { "pattern": "thinking|analysis|complex", "complexity": 6, "description": "Complex analysis" }
+  ],
+  "durationRules": [
+    { "pattern": "read|get|list", "duration": 100, "description": "Fast read operations" },
+    { "pattern": "write|create|update", "duration": 200, "description": "Medium write operations" },
+    { "pattern": "search|find|query", "duration": 2000, "description": "Slow search operations" },
+    { "pattern": "execute|run|command", "duration": 1000, "description": "Medium command execution" },
+    { "pattern": "thinking|analysis", "duration": 1000, "description": "Analysis operations" }
+  ],
+  "categoryRules": [
+    { "pattern": "file|directory|path", "category": "filesystem", "description": "File system operations" },
+    { "pattern": "search|web|url", "category": "web", "description": "Web operations" },
+    { "pattern": "github|repository|commit", "category": "github", "description": "GitHub operations" },
+    { "pattern": "terminal|command|execute", "category": "terminal", "description": "Terminal operations" },
+    { "pattern": "wikipedia|knowledge|article", "category": "knowledge", "description": "Knowledge operations" },
+    { "pattern": "thinking|analysis|reason", "category": "analysis", "description": "Analysis operations" }
+  ]
+}

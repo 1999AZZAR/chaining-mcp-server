@@ -9,8 +9,11 @@ import {
 import { z } from 'zod';
 
 import { MCPServerDiscovery } from './discovery.js';
-import { RouteOptimizer } from './optimizer.js';
+import { SmartRouteOptimizer } from './optimizer.js';
 import { SequentialThinkingIntegration } from './sequential-integration.js';
+import { KnowledgeGraphManager } from './memory-manager.js';
+import { SequentialThinkingManager } from './sequential-thinking-manager.js';
+import { TimeManager } from './time-manager.js';
 import {
   OptimizationCriteriaSchema,
   SequentialThinkingRequestSchema,
@@ -20,14 +23,28 @@ import {
   GenerateRouteSuggestionsSchema,
   AnalyzeWithSequentialThinkingSchema,
   GetToolChainAnalysisSchema,
+  CreateEntitiesSchema,
+  CreateRelationsSchema,
+  AddObservationsSchema,
+  DeleteEntitiesSchema,
+  DeleteObservationsSchema,
+  DeleteRelationsSchema,
+  SearchNodesSchema,
+  OpenNodesSchema,
+  SequentialThinkingSchema,
+  GetCurrentTimeSchema,
+  ConvertTimeSchema,
 } from './types.js';
 import { getToolInputSchema } from './schema-utils.js';
 
 export class ChainingMCPServer {
   private server: Server;
   private discovery: MCPServerDiscovery;
-  private optimizer: RouteOptimizer;
+  private optimizer: SmartRouteOptimizer;
   private sequentialIntegration: SequentialThinkingIntegration;
+  private memoryManager: KnowledgeGraphManager;
+  private sequentialThinkingManager: SequentialThinkingManager;
+  private timeManager: TimeManager;
   private isInitialized: boolean = false;
 
   constructor() {
@@ -45,8 +62,11 @@ export class ChainingMCPServer {
     );
 
     this.discovery = new MCPServerDiscovery();
-    this.optimizer = new RouteOptimizer();
+    this.optimizer = new SmartRouteOptimizer();
     this.sequentialIntegration = new SequentialThinkingIntegration();
+    this.memoryManager = new KnowledgeGraphManager();
+    this.sequentialThinkingManager = new SequentialThinkingManager();
+    this.timeManager = new TimeManager();
 
     this.setupHandlers();
   }
@@ -59,6 +79,7 @@ export class ChainingMCPServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
         tools: [
+          // Original chaining tools
           {
             name: 'list_mcp_servers',
             description: 'List all discovered MCP servers on the system',
@@ -83,6 +104,91 @@ export class ChainingMCPServer {
             name: 'get_tool_chain_analysis',
             description: 'Get comprehensive analysis of available tools and suggested routes',
             inputSchema: getToolInputSchema(GetToolChainAnalysisSchema),
+          },
+          // Memory/Knowledge Graph tools
+          {
+            name: 'create_entities',
+            description: 'Create multiple new entities in the knowledge graph',
+            inputSchema: getToolInputSchema(CreateEntitiesSchema),
+          },
+          {
+            name: 'create_relations',
+            description: 'Create multiple new relations between entities in the knowledge graph. Relations should be in active voice',
+            inputSchema: getToolInputSchema(CreateRelationsSchema),
+          },
+          {
+            name: 'add_observations',
+            description: 'Add new observations to existing entities in the knowledge graph',
+            inputSchema: getToolInputSchema(AddObservationsSchema),
+          },
+          {
+            name: 'delete_entities',
+            description: 'Delete multiple entities and their associated relations from the knowledge graph',
+            inputSchema: getToolInputSchema(DeleteEntitiesSchema),
+          },
+          {
+            name: 'delete_observations',
+            description: 'Delete specific observations from entities in the knowledge graph',
+            inputSchema: getToolInputSchema(DeleteObservationsSchema),
+          },
+          {
+            name: 'delete_relations',
+            description: 'Delete multiple relations from the knowledge graph',
+            inputSchema: getToolInputSchema(DeleteRelationsSchema),
+          },
+          {
+            name: 'read_graph',
+            description: 'Read the entire knowledge graph',
+            inputSchema: { type: 'object', properties: {} },
+          },
+          {
+            name: 'search_nodes',
+            description: 'Search for nodes in the knowledge graph based on a query',
+            inputSchema: getToolInputSchema(SearchNodesSchema),
+          },
+          {
+            name: 'open_nodes',
+            description: 'Open specific nodes in the knowledge graph by their names',
+            inputSchema: getToolInputSchema(OpenNodesSchema),
+          },
+          // Sequential Thinking tool
+          {
+            name: 'sequentialthinking',
+            description: `A detailed tool for dynamic and reflective problem-solving through thoughts.
+This tool helps analyze problems through a flexible thinking process that can adapt and evolve.
+Each thought can build on, question, or revise previous insights as understanding deepens.
+
+When to use this tool:
+- Breaking down complex problems into steps
+- Planning and design with room for revision
+- Analysis that might need course correction
+- Problems where the full scope might not be clear initially
+- Problems that require a multi-step solution
+- Tasks that need to maintain context over multiple steps
+- Situations where irrelevant information needs to be filtered out
+
+Key features:
+- You can adjust total_thoughts up or down as you progress
+- You can question or revise previous thoughts
+- You can add more thoughts even after reaching what seemed like the end
+- You can express uncertainty and explore alternative approaches
+- Not every thought needs to build linearly - you can branch or backtrack
+- Generates a solution hypothesis
+- Verifies the hypothesis based on the Chain of Thought steps
+- Repeats the process until satisfied
+- Provides a correct answer`,
+            inputSchema: getToolInputSchema(SequentialThinkingSchema),
+          },
+          // Time tools
+          {
+            name: 'get_current_time',
+            description: 'Get current time in a specific timezone',
+            inputSchema: getToolInputSchema(GetCurrentTimeSchema),
+          },
+          {
+            name: 'convert_time',
+            description: 'Convert time between timezones',
+            inputSchema: getToolInputSchema(ConvertTimeSchema),
           },
         ],
       };
@@ -174,6 +280,7 @@ export class ChainingMCPServer {
 
       try {
         switch (name) {
+          // Original chaining tools
           case 'list_mcp_servers':
             return await this.handleListMCPServers();
 
@@ -189,15 +296,57 @@ export class ChainingMCPServer {
           case 'get_tool_chain_analysis':
             return await this.handleToolChainAnalysis(args);
 
+          // Memory/Knowledge Graph tools
+          case 'create_entities':
+            return await this.handleCreateEntities(args);
+
+          case 'create_relations':
+            return await this.handleCreateRelations(args);
+
+          case 'add_observations':
+            return await this.handleAddObservations(args);
+
+          case 'delete_entities':
+            return await this.handleDeleteEntities(args);
+
+          case 'delete_observations':
+            return await this.handleDeleteObservations(args);
+
+          case 'delete_relations':
+            return await this.handleDeleteRelations(args);
+
+          case 'read_graph':
+            return await this.handleReadGraph();
+
+          case 'search_nodes':
+            return await this.handleSearchNodes(args);
+
+          case 'open_nodes':
+            return await this.handleOpenNodes(args);
+
+          // Sequential Thinking tool
+          case 'sequentialthinking':
+            return await this.handleSequentialThinking(args);
+
+          // Time tools
+          case 'get_current_time':
+            return await this.handleGetCurrentTime(args);
+
+          case 'convert_time':
+            return await this.handleConvertTime(args);
+
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
       } catch (error) {
+        const errorMessage = this.formatErrorMessage(error, name, args);
+        console.error(`Tool execution error for ${name}:`, error);
+        
         return {
           content: [
             {
               type: 'text',
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+              text: errorMessage,
             },
           ],
           isError: true,
@@ -207,83 +356,179 @@ export class ChainingMCPServer {
   }
 
   /**
-   * Ensure the server is initialized
+   * Format error messages with detailed information
+   */
+  private formatErrorMessage(error: unknown, toolName: string, args: any): string {
+    const timestamp = new Date().toISOString();
+    const errorType = error instanceof Error ? error.constructor.name : 'UnknownError';
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    let details = '';
+    if (error instanceof Error && error.stack) {
+      details = `\nStack trace: ${error.stack}`;
+    }
+    
+    return `[${timestamp}] Tool Error: ${toolName}
+Error Type: ${errorType}
+Message: ${errorMessage}
+Arguments: ${JSON.stringify(args, null, 2)}${details}
+
+Please check the tool parameters and try again.`;
+  }
+
+  /**
+   * Ensure the server is initialized with robust error handling
    */
   private async ensureInitialized(): Promise<void> {
     if (!this.isInitialized) {
-      await this.discovery.discoverServers();
-      await this.discovery.analyzeTools();
-      this.optimizer.setTools(this.discovery.getTools());
-      this.isInitialized = true;
+      try {
+        console.log('Initializing chaining MCP server...');
+        
+        await this.discovery.discoverServers();
+        console.log(`Discovered ${this.discovery.getServers().length} MCP servers`);
+        
+        await this.discovery.analyzeTools();
+        console.log(`Analyzed ${this.discovery.getTools().length} tools`);
+        
+        this.optimizer.setTools(this.discovery.getTools());
+        this.sequentialIntegration.setAvailableTools(this.discovery.getTools());
+        
+        this.isInitialized = true;
+        console.log('Chaining MCP server initialization completed successfully');
+      } catch (error) {
+        console.error('Failed to initialize chaining MCP server:', error);
+        throw new Error(`Server initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
   }
 
   /**
-   * Handle list MCP servers request
+   * Handle list MCP servers request with robust error handling
    */
   private async handleListMCPServers() {
-    const servers = this.discovery.getServers();
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify({
-            servers: servers.map(server => ({
-              name: server.name,
-              command: server.command,
-              args: server.args,
-              env: server.env,
-              description: server.description,
-              version: server.version,
-              capabilities: server.capabilities,
-            })),
-            total: servers.length,
-          }, null, 2),
-        },
-      ],
-    };
+    try {
+      const servers = this.discovery.getServers();
+      
+      if (!servers || servers.length === 0) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                servers: [],
+                total: 0,
+                message: 'No MCP servers discovered. Please check your configuration.',
+              }, null, 2),
+            },
+          ],
+        };
+      }
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              servers: servers.map(server => ({
+                name: server.name || 'Unknown',
+                command: server.command || 'Unknown',
+                args: server.args || [],
+                env: server.env || {},
+                description: server.description || 'No description available',
+                version: server.version || 'Unknown',
+                capabilities: server.capabilities || {},
+              })),
+              total: servers.length,
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to list MCP servers: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**
-   * Handle analyze tools request
+   * Handle analyze tools request with robust validation and error handling
    */
   private async handleAnalyzeTools(args: any) {
-    const validatedArgs = AnalyzeToolsSchema.parse(args);
-    const { serverName, category } = validatedArgs;
-    let tools = this.discovery.getTools();
+    try {
+      // Validate and sanitize input
+      const validatedArgs = AnalyzeToolsSchema.parse(args);
+      const { serverName, category } = validatedArgs;
+      
+      let tools = this.discovery.getTools();
+      
+      if (!tools || tools.length === 0) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                tools: [],
+                total: 0,
+                message: 'No tools available for analysis. Please ensure MCP servers are properly configured.',
+                timestamp: new Date().toISOString(),
+              }, null, 2),
+            },
+          ],
+        };
+      }
 
-    if (serverName) {
-      tools = tools.filter(tool => tool.serverName === serverName);
-    }
+      // Apply filters with validation
+      if (serverName && typeof serverName === 'string') {
+        const sanitizedServerName = serverName.trim();
+        if (sanitizedServerName.length > 0) {
+          tools = tools.filter(tool => 
+            tool.serverName && tool.serverName.toLowerCase().includes(sanitizedServerName.toLowerCase())
+          );
+        }
+      }
 
-    if (category) {
-      tools = tools.filter(tool => tool.category === category);
-    }
+      if (category && typeof category === 'string') {
+        const sanitizedCategory = category.trim();
+        if (sanitizedCategory.length > 0) {
+          tools = tools.filter(tool => 
+            tool.category && tool.category.toLowerCase().includes(sanitizedCategory.toLowerCase())
+          );
+        }
+      }
 
-    const analysis = {
-      tools: tools.map(tool => ({
-        name: tool.name,
-        description: tool.description,
-        serverName: tool.serverName,
-        category: tool.category,
-        estimatedComplexity: tool.estimatedComplexity,
-        estimatedDuration: tool.estimatedDuration,
-        dependencies: tool.dependencies,
-      })),
-      total: tools.length,
-      byServer: this.groupToolsByServer(tools),
-      byCategory: this.groupToolsByCategory(tools),
-    };
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(analysis, null, 2),
+      const analysis = {
+        tools: tools.map(tool => ({
+          name: tool.name || 'Unknown',
+          description: tool.description || 'No description available',
+          serverName: tool.serverName || 'Unknown',
+          category: tool.category || 'uncategorized',
+          estimatedComplexity: tool.estimatedComplexity || 1,
+          estimatedDuration: tool.estimatedDuration || 1000,
+          dependencies: tool.dependencies || [],
+        })),
+        total: tools.length,
+        byServer: this.groupToolsByServer(tools),
+        byCategory: this.groupToolsByCategory(tools),
+        filters: {
+          serverName: serverName || null,
+          category: category || null,
         },
-      ],
-    };
+        timestamp: new Date().toISOString(),
+      };
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(analysis, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        throw new Error(`Invalid parameters: ${error.message}. Please check your input format.`);
+      }
+      throw new Error(`Failed to analyze tools: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**
@@ -472,6 +717,349 @@ export class ChainingMCPServer {
     const tools = this.discovery.getTools();
     const categories = new Set(tools.map(tool => tool.category).filter((category): category is string => Boolean(category)));
     return Array.from(categories);
+  }
+
+  /**
+   * Handle create entities request with robust validation and error handling
+   */
+  private async handleCreateEntities(args: any) {
+    try {
+      const validatedArgs = CreateEntitiesSchema.parse(args);
+      
+      // Additional validation
+      if (!validatedArgs.entities || !Array.isArray(validatedArgs.entities)) {
+        throw new Error('Entities must be provided as an array');
+      }
+      
+      if (validatedArgs.entities.length === 0) {
+        throw new Error('At least one entity must be provided');
+      }
+      
+      if (validatedArgs.entities.length > 100) {
+        throw new Error('Too many entities (maximum 100 per request)');
+      }
+      
+      // Validate and sanitize each entity
+      const sanitizedEntities = validatedArgs.entities.map((entity, index) => {
+        if (!entity.name || typeof entity.name !== 'string') {
+          throw new Error(`Entity ${index + 1}: name is required and must be a string`);
+        }
+        
+        if (!entity.entityType || typeof entity.entityType !== 'string') {
+          throw new Error(`Entity ${index + 1}: entityType is required and must be a string`);
+        }
+        
+        if (!entity.observations || !Array.isArray(entity.observations)) {
+          throw new Error(`Entity ${index + 1}: observations must be provided as an array`);
+        }
+        
+        const sanitizedName = entity.name.trim();
+        const sanitizedType = entity.entityType.trim();
+        
+        if (sanitizedName.length === 0) {
+          throw new Error(`Entity ${index + 1}: name cannot be empty`);
+        }
+        
+        if (sanitizedType.length === 0) {
+          throw new Error(`Entity ${index + 1}: entityType cannot be empty`);
+        }
+        
+        if (sanitizedName.length > 200) {
+          throw new Error(`Entity ${index + 1}: name is too long (maximum 200 characters)`);
+        }
+        
+        if (sanitizedType.length > 100) {
+          throw new Error(`Entity ${index + 1}: entityType is too long (maximum 100 characters)`);
+        }
+        
+        const sanitizedObservations = entity.observations
+          .filter(obs => typeof obs === 'string' && obs.trim().length > 0)
+          .map(obs => obs.trim())
+          .slice(0, 50); // Limit to 50 observations per entity
+        
+        if (sanitizedObservations.length === 0) {
+          throw new Error(`Entity ${index + 1}: at least one valid observation is required`);
+        }
+        
+        return {
+          name: sanitizedName,
+          entityType: sanitizedType,
+          observations: sanitizedObservations,
+        };
+      });
+      
+      console.log(`Creating ${sanitizedEntities.length} entities in knowledge graph`);
+      
+      const result = await this.memoryManager.createEntities(sanitizedEntities);
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              ...result,
+              timestamp: new Date().toISOString(),
+              entitiesCreated: sanitizedEntities.length,
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        throw new Error(`Invalid entity parameters: ${error.message}. Please check your input format.`);
+      }
+      throw new Error(`Failed to create entities: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle create relations request
+   */
+  private async handleCreateRelations(args: any) {
+    const validatedArgs = CreateRelationsSchema.parse(args);
+    const result = await this.memoryManager.createRelations(validatedArgs.relations);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle add observations request
+   */
+  private async handleAddObservations(args: any) {
+    const validatedArgs = AddObservationsSchema.parse(args);
+    const result = await this.memoryManager.addObservations(validatedArgs.observations);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle delete entities request
+   */
+  private async handleDeleteEntities(args: any) {
+    const validatedArgs = DeleteEntitiesSchema.parse(args);
+    await this.memoryManager.deleteEntities(validatedArgs.entityNames);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Entities deleted successfully',
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle delete observations request
+   */
+  private async handleDeleteObservations(args: any) {
+    const validatedArgs = DeleteObservationsSchema.parse(args);
+    await this.memoryManager.deleteObservations(validatedArgs.deletions);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Observations deleted successfully',
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle delete relations request
+   */
+  private async handleDeleteRelations(args: any) {
+    const validatedArgs = DeleteRelationsSchema.parse(args);
+    await this.memoryManager.deleteRelations(validatedArgs.relations);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Relations deleted successfully',
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle read graph request
+   */
+  private async handleReadGraph() {
+    const result = await this.memoryManager.readGraph();
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle search nodes request
+   */
+  private async handleSearchNodes(args: any) {
+    const validatedArgs = SearchNodesSchema.parse(args);
+    const result = await this.memoryManager.searchNodes(validatedArgs.query);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle open nodes request
+   */
+  private async handleOpenNodes(args: any) {
+    const validatedArgs = OpenNodesSchema.parse(args);
+    const result = await this.memoryManager.openNodes(validatedArgs.names);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle sequential thinking request with robust validation and error handling
+   */
+  private async handleSequentialThinking(args: any) {
+    try {
+      // Validate and sanitize input
+      const validatedArgs = SequentialThinkingSchema.parse(args);
+      
+      // Additional validation for thought content
+      if (!validatedArgs.thought || typeof validatedArgs.thought !== 'string') {
+        throw new Error('Thought content is required and must be a string');
+      }
+      
+      if (validatedArgs.thought.trim().length === 0) {
+        throw new Error('Thought content cannot be empty');
+      }
+      
+      if (validatedArgs.thought.length > 10000) {
+        throw new Error('Thought content is too long (maximum 10,000 characters)');
+      }
+      
+      // Validate thought numbers
+      if (validatedArgs.thoughtNumber < 1) {
+        throw new Error('Thought number must be at least 1');
+      }
+      
+      if (validatedArgs.totalThoughts < 1) {
+        throw new Error('Total thoughts must be at least 1');
+      }
+      
+      if (validatedArgs.thoughtNumber > validatedArgs.totalThoughts) {
+        throw new Error('Current thought number cannot exceed total thoughts');
+      }
+      
+      // Sanitize thought content
+      const sanitizedArgs = {
+        ...validatedArgs,
+        thought: validatedArgs.thought.trim(),
+      };
+      
+      console.log(`Processing sequential thought ${sanitizedArgs.thoughtNumber}/${sanitizedArgs.totalThoughts}`);
+      
+      const result = this.sequentialThinkingManager.processThought(sanitizedArgs);
+      
+      return result;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        throw new Error(`Invalid sequential thinking parameters: ${error.message}. Please check your input format.`);
+      }
+      throw new Error(`Sequential thinking failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle get current time request with robust validation and error handling
+   */
+  private async handleGetCurrentTime(args: any) {
+    try {
+      const validatedArgs = GetCurrentTimeSchema.parse(args);
+      
+      // Validate timezone format
+      if (!validatedArgs.timezone || typeof validatedArgs.timezone !== 'string') {
+        throw new Error('Timezone is required and must be a string');
+      }
+      
+      const sanitizedTimezone = validatedArgs.timezone.trim();
+      if (sanitizedTimezone.length === 0) {
+        throw new Error('Timezone cannot be empty');
+      }
+      
+      console.log(`Getting current time for timezone: ${sanitizedTimezone}`);
+      
+      const result = this.timeManager.getCurrentTime(sanitizedTimezone);
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              ...result,
+              timestamp: new Date().toISOString(),
+              requestTimezone: sanitizedTimezone,
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        throw new Error(`Invalid timezone parameter: ${error.message}. Please provide a valid IANA timezone (e.g., 'America/New_York', 'Europe/London').`);
+      }
+      throw new Error(`Failed to get current time: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle convert time request
+   */
+  private async handleConvertTime(args: any) {
+    const validatedArgs = ConvertTimeSchema.parse(args);
+    const result = this.timeManager.convertTime(
+      validatedArgs.source_timezone,
+      validatedArgs.time,
+      validatedArgs.target_timezone
+    );
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
   }
 
   /**

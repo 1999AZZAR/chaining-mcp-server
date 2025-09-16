@@ -4,28 +4,32 @@ import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { spawn, ChildProcess } from 'child_process';
 import { MCPServerInfo, ToolInfo, MCPServerInfoSchema } from './types.js';
+import { ConfigLoader } from './config-loader.js';
+import { DiscoveryConfig, EssentialServerConfig, FallbackToolConfig } from './discovery-config.js';
 
 export class MCPServerDiscovery {
   private servers: Map<string, MCPServerInfo> = new Map();
   private tools: Map<string, ToolInfo> = new Map();
+  private configLoader: ConfigLoader;
+  private config!: DiscoveryConfig;
 
-  constructor() {}
+  constructor() {
+    this.configLoader = new ConfigLoader();
+  }
 
   /**
    * Discover MCP servers from common configuration locations
    */
   async discoverServers(): Promise<MCPServerInfo[]> {
-    const configPaths = [
-      // Cursor MCP configuration (most common)
-      join(homedir(), '.cursor', 'mcp.json'),
-      // Other common MCP configuration locations
-      join(homedir(), '.config', 'mcp', 'servers.json'),
-      join(homedir(), '.mcp', 'servers.json'),
-      join(process.cwd(), 'mcp-servers.json'),
-      join(process.cwd(), '.mcp', 'servers.json'),
-      // Look for package.json files that might contain MCP server configs
-      ...(await this.findPackageJsonFiles()),
-    ];
+    // Load configuration
+    this.config = await this.configLoader.loadConfig();
+    
+    // Get config paths from configuration
+    const configPaths = this.configLoader.expandPaths(this.config.configPaths);
+    
+    // Add package.json files that might contain MCP server configs
+    const packageJsonPaths = await this.findPackageJsonFiles();
+    configPaths.push(...packageJsonPaths);
 
     const discoveredServers: MCPServerInfo[] = [];
 
@@ -43,9 +47,9 @@ export class MCPServerDiscovery {
     const envServers = this.discoverFromEnvironment();
     discoveredServers.push(...envServers);
 
-    // Add hardcoded essential servers (always available via npx)
-    const hardcodedServers = this.getHardcodedServers();
-    discoveredServers.push(...hardcodedServers);
+    // Add essential servers from configuration
+    const essentialServers = this.getEssentialServers();
+    discoveredServers.push(...essentialServers);
 
     // Store discovered servers
     for (const server of discoveredServers) {
@@ -146,27 +150,10 @@ export class MCPServerDiscovery {
   }
 
   /**
-   * Get hardcoded essential servers that are always available via npx
+   * Get essential servers from configuration
    */
-  private getHardcodedServers(): MCPServerInfo[] {
-    const servers: MCPServerInfo[] = [];
-
-    // Sequential Thinking Server - always available via npx
-    servers.push({
-      name: 'sequential-thinking',
-      command: 'npx',
-      args: ['-y', '@modelcontextprotocol/server-sequential-thinking'],
-      env: {},
-      description: 'Sequential thinking analysis MCP server',
-      version: '1.0.0',
-      capabilities: {
-        tools: true,
-        resources: false,
-        prompts: false
-      }
-    });
-
-    return servers;
+  private getEssentialServers(): MCPServerInfo[] {
+    return this.config.essentialServers.map(server => MCPServerInfoSchema.parse(server));
   }
 
   /**
@@ -312,255 +299,77 @@ export class MCPServerDiscovery {
   }
 
   /**
-   * Get fallback tools for known server types
+   * Get fallback tools for known server types from configuration
    */
   private getFallbackTools(serverName: string, serverInfo: MCPServerInfo): ToolInfo[] {
     const tools: ToolInfo[] = [];
 
-    // Filesystem server tools
-    if (serverName.includes('filesystem') || serverName.includes('file')) {
-      tools.push(
-        {
-          name: 'read_file',
-          description: 'Read contents of a file',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              path: { type: 'string', description: 'Path to the file' }
-            },
-            required: ['path']
-          },
-          serverName,
-          category: 'filesystem',
-          estimatedComplexity: 2,
-          estimatedDuration: 100,
-        },
-        {
-          name: 'write_file',
-          description: 'Write content to a file',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              path: { type: 'string', description: 'Path to the file' },
-              content: { type: 'string', description: 'Content to write' }
-            },
-            required: ['path', 'content']
-          },
-          serverName,
-          category: 'filesystem',
-          estimatedComplexity: 3,
-          estimatedDuration: 200,
-        },
-        {
-          name: 'list_directory',
-          description: 'List contents of a directory',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              path: { type: 'string', description: 'Path to the directory' }
-            },
-            required: ['path']
-          },
-          serverName,
-          category: 'filesystem',
-          estimatedComplexity: 2,
-          estimatedDuration: 150,
+    // Find matching fallback tool configuration
+    for (const fallbackConfig of this.config.fallbackTools) {
+      const regex = new RegExp(fallbackConfig.serverPattern, 'i');
+      if (regex.test(serverName)) {
+        // Add tools from this configuration
+        for (const toolDef of fallbackConfig.tools) {
+          tools.push({
+            name: toolDef.name,
+            description: toolDef.description,
+            inputSchema: toolDef.inputSchema,
+            serverName,
+            category: toolDef.category,
+            estimatedComplexity: toolDef.estimatedComplexity,
+            estimatedDuration: toolDef.estimatedDuration,
+          });
         }
-      );
-    }
-
-    // GitHub server tools
-    if (serverName.includes('github')) {
-      tools.push(
-        {
-          name: 'create_repository',
-          description: 'Create a new GitHub repository',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              name: { type: 'string', description: 'Repository name' },
-              description: { type: 'string', description: 'Repository description' },
-              private: { type: 'boolean', description: 'Whether repository is private' }
-            },
-            required: ['name']
-          },
-          serverName,
-          category: 'github',
-          estimatedComplexity: 4,
-          estimatedDuration: 2000,
-        },
-        {
-          name: 'get_repository',
-          description: 'Get information about a repository',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              owner: { type: 'string', description: 'Repository owner' },
-              repo: { type: 'string', description: 'Repository name' }
-            },
-            required: ['owner', 'repo']
-          },
-          serverName,
-          category: 'github',
-          estimatedComplexity: 3,
-          estimatedDuration: 1000,
-        }
-      );
-    }
-
-    // Web search tools
-    if (serverName.includes('search') || serverName.includes('web') || serverName.includes('google')) {
-      tools.push({
-        name: 'web_search',
-        description: 'Search the web for information',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            query: { type: 'string', description: 'Search query' },
-            limit: { type: 'number', description: 'Maximum number of results' }
-          },
-          required: ['query']
-        },
-        serverName,
-        category: 'web',
-        estimatedComplexity: 4,
-        estimatedDuration: 2000,
-      });
-    }
-
-
-    // Terminal tools
-    if (serverName.includes('terminal')) {
-      tools.push({
-        name: 'execute_command',
-        description: 'Execute a terminal command',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            command: { type: 'string', description: 'Command to execute' },
-            workingDirectory: { type: 'string', description: 'Working directory' }
-          },
-          required: ['command']
-        },
-        serverName,
-        category: 'terminal',
-        estimatedComplexity: 5,
-        estimatedDuration: 1000,
-      });
-    }
-
-    // Wikipedia tools
-    if (serverName.includes('wikipedia')) {
-      tools.push(
-        {
-          name: 'search_wikipedia',
-          description: 'Search Wikipedia for articles',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              query: { type: 'string', description: 'Search query' },
-              limit: { type: 'number', description: 'Maximum number of results' }
-            },
-            required: ['query']
-          },
-          serverName,
-          category: 'knowledge',
-          estimatedComplexity: 3,
-          estimatedDuration: 1500,
-        },
-        {
-          name: 'get_wikipedia_page',
-          description: 'Get content from a Wikipedia page',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              title: { type: 'string', description: 'Page title' },
-              lang: { type: 'string', description: 'Language code' }
-            },
-            required: ['title']
-          },
-          serverName,
-          category: 'knowledge',
-          estimatedComplexity: 3,
-          estimatedDuration: 1000,
-        }
-      );
-    }
-
-    // Sequential thinking server tools
-    if (serverName.includes('sequential-thinking') || serverName.includes('sequential')) {
-      tools.push(
-        {
-          name: 'sequentialthinking',
-          description: 'A detailed tool for dynamic and reflective problem-solving through thoughts',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              thought: { type: 'string', description: 'Your current thinking step' },
-              nextThoughtNeeded: { type: 'boolean', description: 'Whether another thought step is needed' },
-              thoughtNumber: { type: 'number', description: 'Current thought number' },
-              totalThoughts: { type: 'number', description: 'Estimated total thoughts needed' },
-              isRevision: { type: 'boolean', description: 'Whether this revises previous thinking' },
-              revisesThought: { type: 'number', description: 'Which thought is being reconsidered' },
-              branchFromThought: { type: 'number', description: 'Branching point thought number' },
-              branchId: { type: 'string', description: 'Branch identifier' },
-              needsMoreThoughts: { type: 'boolean', description: 'If more thoughts are needed' }
-            },
-            required: ['thought', 'nextThoughtNeeded', 'thoughtNumber', 'totalThoughts']
-          },
-          serverName,
-          category: 'analysis',
-          estimatedComplexity: 5,
-          estimatedDuration: 2000,
-        }
-      );
+      }
     }
 
     return tools;
   }
 
   /**
-   * Infer tool category from name and description
+   * Infer tool category from name and description using configuration rules
    */
   private inferCategory(name: string, description?: string): string {
     const text = `${name} ${description || ''}`.toLowerCase();
     
-    if (text.includes('file') || text.includes('directory') || text.includes('path')) return 'filesystem';
-    if (text.includes('search') || text.includes('web') || text.includes('url')) return 'web';
-    if (text.includes('github') || text.includes('repository') || text.includes('commit')) return 'github';
-    if (text.includes('terminal') || text.includes('command') || text.includes('execute')) return 'terminal';
-    if (text.includes('wikipedia') || text.includes('knowledge') || text.includes('article')) return 'knowledge';
-    if (text.includes('thinking') || text.includes('analysis') || text.includes('reason')) return 'analysis';
+    // Check against configured category rules
+    for (const rule of this.config.categoryRules) {
+      if (text.includes(rule.pattern)) {
+        return rule.category;
+      }
+    }
     
-    return 'utility';
+    return 'utility'; // Default category
   }
 
   /**
-   * Estimate tool complexity
+   * Estimate tool complexity using configuration rules
    */
   private estimateComplexity(name: string, description?: string): number {
     const text = `${name} ${description || ''}`.toLowerCase();
     
-    if (text.includes('read') || text.includes('get') || text.includes('list')) return 2;
-    if (text.includes('write') || text.includes('create') || text.includes('update')) return 3;
-    if (text.includes('search') || text.includes('find') || text.includes('query')) return 4;
-    if (text.includes('execute') || text.includes('run') || text.includes('command')) return 5;
-    if (text.includes('thinking') || text.includes('analysis') || text.includes('complex')) return 6;
+    // Check against configured complexity rules
+    for (const rule of this.config.complexityRules) {
+      if (text.includes(rule.pattern)) {
+        return rule.complexity;
+      }
+    }
     
     return 3; // Default complexity
   }
 
   /**
-   * Estimate tool duration
+   * Estimate tool duration using configuration rules
    */
   private estimateDuration(name: string, description?: string): number {
     const text = `${name} ${description || ''}`.toLowerCase();
     
-    if (text.includes('read') || text.includes('get') || text.includes('list')) return 100;
-    if (text.includes('write') || text.includes('create') || text.includes('update')) return 200;
-    if (text.includes('search') || text.includes('find') || text.includes('query')) return 2000;
-    if (text.includes('execute') || text.includes('run') || text.includes('command')) return 1000;
-    if (text.includes('thinking') || text.includes('analysis')) return 1000;
+    // Check against configured duration rules
+    for (const rule of this.config.durationRules) {
+      if (text.includes(rule.pattern)) {
+        return rule.duration;
+      }
+    }
     
     return 500; // Default duration
   }
@@ -591,5 +400,31 @@ export class MCPServerDiscovery {
    */
   getToolsByServer(serverName: string): ToolInfo[] {
     return this.getTools().filter(tool => tool.serverName === serverName);
+  }
+
+  /**
+   * Reload configuration and rediscover servers
+   */
+  async reloadConfiguration(): Promise<void> {
+    this.config = await this.configLoader.loadConfig();
+    this.servers.clear();
+    this.tools.clear();
+    await this.discoverServers();
+    await this.analyzeTools();
+  }
+
+  /**
+   * Get current configuration
+   */
+  getConfiguration(): DiscoveryConfig {
+    return this.config;
+  }
+
+  /**
+   * Update configuration
+   */
+  async updateConfiguration(newConfig: Partial<DiscoveryConfig>): Promise<void> {
+    this.config = this.configLoader.mergeConfigs(this.config, newConfig);
+    await this.reloadConfiguration();
   }
 }

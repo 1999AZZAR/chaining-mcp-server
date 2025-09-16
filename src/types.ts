@@ -98,6 +98,81 @@ export const GetToolChainAnalysisSchema = z.object({
   criteria: OptimizationCriteriaSchema.optional().describe('Optimization criteria'),
 });
 
+// Memory/Knowledge Graph Schemas
+export const EntitySchema = z.object({
+  name: z.string().describe('The name of the entity'),
+  entityType: z.string().describe('The type of the entity'),
+  observations: z.array(z.string()).describe('An array of observation contents associated with the entity'),
+});
+
+export const RelationSchema = z.object({
+  from: z.string().describe('The name of the entity where the relation starts'),
+  to: z.string().describe('The name of the entity where the relation ends'),
+  relationType: z.string().describe('The type of the relation'),
+});
+
+export const CreateEntitiesSchema = z.object({
+  entities: z.array(EntitySchema).describe('Array of entities to create'),
+});
+
+export const CreateRelationsSchema = z.object({
+  relations: z.array(RelationSchema).describe('Array of relations to create'),
+});
+
+export const AddObservationsSchema = z.object({
+  observations: z.array(z.object({
+    entityName: z.string().describe('The name of the entity to add the observations to'),
+    contents: z.array(z.string()).describe('An array of observation contents to add'),
+  })).describe('Array of observations to add'),
+});
+
+export const DeleteEntitiesSchema = z.object({
+  entityNames: z.array(z.string()).describe('An array of entity names to delete'),
+});
+
+export const DeleteObservationsSchema = z.object({
+  deletions: z.array(z.object({
+    entityName: z.string().describe('The name of the entity containing the observations'),
+    observations: z.array(z.string()).describe('An array of observations to delete'),
+  })).describe('Array of observations to delete'),
+});
+
+export const DeleteRelationsSchema = z.object({
+  relations: z.array(RelationSchema).describe('An array of relations to delete'),
+});
+
+export const SearchNodesSchema = z.object({
+  query: z.string().describe('The search query to match against entity names, types, and observation content'),
+});
+
+export const OpenNodesSchema = z.object({
+  names: z.array(z.string()).describe('An array of entity names to retrieve'),
+});
+
+// Sequential Thinking Schemas
+export const SequentialThinkingSchema = z.object({
+  thought: z.string().describe('Your current thinking step'),
+  nextThoughtNeeded: z.boolean().describe('Whether another thought step is needed'),
+  thoughtNumber: z.number().min(1).describe('Current thought number'),
+  totalThoughts: z.number().min(1).describe('Estimated total thoughts needed'),
+  isRevision: z.boolean().optional().describe('Whether this revises previous thinking'),
+  revisesThought: z.number().min(1).optional().describe('Which thought is being reconsidered'),
+  branchFromThought: z.number().min(1).optional().describe('Branching point thought number'),
+  branchId: z.string().optional().describe('Branch identifier'),
+  needsMoreThoughts: z.boolean().optional().describe('If more thoughts are needed'),
+});
+
+// Time Schemas
+export const GetCurrentTimeSchema = z.object({
+  timezone: z.string().describe('IANA timezone name (e.g., America/New_York, Europe/London)'),
+});
+
+export const ConvertTimeSchema = z.object({
+  source_timezone: z.string().describe('Source IANA timezone name'),
+  time: z.string().describe('Time to convert in 24-hour format (HH:MM)'),
+  target_timezone: z.string().describe('Target IANA timezone name'),
+});
+
 // Type exports
 export type MCPServerInfo = z.infer<typeof MCPServerInfoSchema>;
 export type ToolInfo = z.infer<typeof ToolInfoSchema>;
@@ -110,3 +185,22 @@ export type AnalyzeToolsInput = z.infer<typeof AnalyzeToolsSchema>;
 export type GenerateRouteSuggestionsInput = z.infer<typeof GenerateRouteSuggestionsSchema>;
 export type AnalyzeWithSequentialThinkingInput = z.infer<typeof AnalyzeWithSequentialThinkingSchema>;
 export type GetToolChainAnalysisInput = z.infer<typeof GetToolChainAnalysisSchema>;
+
+// Memory types
+export type Entity = z.infer<typeof EntitySchema>;
+export type Relation = z.infer<typeof RelationSchema>;
+export type CreateEntitiesInput = z.infer<typeof CreateEntitiesSchema>;
+export type CreateRelationsInput = z.infer<typeof CreateRelationsSchema>;
+export type AddObservationsInput = z.infer<typeof AddObservationsSchema>;
+export type DeleteEntitiesInput = z.infer<typeof DeleteEntitiesSchema>;
+export type DeleteObservationsInput = z.infer<typeof DeleteObservationsSchema>;
+export type DeleteRelationsInput = z.infer<typeof DeleteRelationsSchema>;
+export type SearchNodesInput = z.infer<typeof SearchNodesSchema>;
+export type OpenNodesInput = z.infer<typeof OpenNodesSchema>;
+
+// Sequential thinking types
+export type SequentialThinkingInput = z.infer<typeof SequentialThinkingSchema>;
+
+// Time types
+export type GetCurrentTimeInput = z.infer<typeof GetCurrentTimeSchema>;
+export type ConvertTimeInput = z.infer<typeof ConvertTimeSchema>;
