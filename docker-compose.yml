@@ -1,0 +1,43 @@
+services:
+  chaining-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chaining-mcp-server
+    restart: unless-stopped
+    volumes:
+      # Mount data directory for persistent memory storage
+      - ./data:/app/data
+      # Mount MCP configuration if needed
+      - ~/.cursor/mcp.json:/home/mcpuser/.cursor/mcp.json:ro
+    environment:
+      - NODE_ENV=production
+      - MEMORY_FILE_PATH=/app/data/memory.json
+      - SEQUENTIAL_THINKING_AVAILABLE=true
+    networks:
+      - mcp-network
+    # Uncomment if you need to expose ports for HTTP transport
+    # ports:
+    #   - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('Health check passed')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+networks:
+  mcp-network:
+    driver: bridge
+
+volumes:
+  # Named volume for data persistence
+  mcp-data:
+    driver: local

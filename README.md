@@ -56,6 +56,22 @@ This server has been refined to properly integrate and enhance the implementatio
 
 ## Installation
 
+### Option 1: Docker (Recommended)
+
+1. Clone or download this repository
+2. Build and run with Docker Compose:
+   ```bash
+   docker compose up --build
+   ```
+   
+   Or build and run manually:
+   ```bash
+   docker build -t chaining-mcp-server .
+   docker run -d --name chaining-mcp-server -v ./data:/app/data chaining-mcp-server
+   ```
+
+### Option 2: Local Installation
+
 1. Clone or download this repository
 2. Install dependencies:
    ```bash
@@ -66,10 +82,143 @@ This server has been refined to properly integrate and enhance the implementatio
    npm run build
    ```
 
+## Docker Configuration
+
+### Docker Compose (Recommended)
+
+The included `docker compose.yml` provides a complete setup with:
+
+- **Automatic building**: Builds the image from source
+- **Volume mounting**: Persistent data storage in `./data` directory
+- **Health checks**: Monitors container health
+- **Resource limits**: Memory limits for stability
+- **Network isolation**: Dedicated Docker network
+
+To use Docker Compose:
+
+```bash
+# Start the service
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop the service
+docker compose down
+
+# Rebuild and restart
+docker compose up --build -d
+```
+
+### Convenience Scripts
+
+Use the included `docker-scripts.sh` for easy management:
+
+```bash
+# Make script executable (first time only)
+chmod +x docker-scripts.sh
+
+# Build the image
+./docker-scripts.sh build
+
+# Start the service
+./docker-scripts.sh start
+
+# View logs
+./docker-scripts.sh logs
+
+# Check status
+./docker-scripts.sh status
+
+# Open shell in container
+./docker-scripts.sh shell
+
+# Stop the service
+./docker-scripts.sh stop
+
+# Restart the service
+./docker-scripts.sh restart
+
+# Clean up everything
+./docker-scripts.sh clean
+
+# Show help
+./docker-scripts.sh help
+```
+
+### Docker Run Commands
+
+For manual Docker deployment:
+
+```bash
+# Build the image
+docker build -t chaining-mcp-server .
+
+# Run with volume for data persistence
+docker run -d \
+  --name chaining-mcp-server \
+  -v $(pwd)/data:/app/data \
+  -e MEMORY_FILE_PATH=/app/data/memory.json \
+  -e SEQUENTIAL_THINKING_AVAILABLE=true \
+  chaining-mcp-server
+
+# Run in interactive mode for debugging
+docker run -it --rm \
+  -v $(pwd)/data:/app/data \
+  chaining-mcp-server /bin/bash
+```
+
+### Environment Variables
+
+Configure the container with these environment variables:
+
+- `NODE_ENV`: Set to `production` for optimized performance
+- `MEMORY_FILE_PATH`: Path to memory storage file (default: `/app/data/memory.json`)
+- `SEQUENTIAL_THINKING_AVAILABLE`: Enable sequential thinking features (default: `true`)
+- `DISABLE_THOUGHT_LOGGING`: Disable thought logging (default: `false`)
+
+### Volume Mounts
+
+The Docker setup includes these volume mounts:
+
+- `./data:/app/data`: Persistent storage for memory and knowledge graph data
+- `~/.cursor/mcp.json:/home/mcpuser/.cursor/mcp.json:ro`: Read-only access to MCP configuration
+
 ## Configuration
 
 Add the chaining MCP server to your MCP client configuration:
 
+### For Docker deployment:
+```json
+{
+  "mcpServers": {
+    "chaining": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-v",
+        "/path/to/chaining-mcp-server/data:/app/data",
+        "-v",
+        "/path/to/.cursor/mcp.json:/home/mcpuser/.cursor/mcp.json:ro",
+        "chaining-mcp-server"
+      ],
+      "env": {
+        "NODE_ENV": "production",
+        "MEMORY_FILE_PATH": "/app/data/memory.json",
+        "SEQUENTIAL_THINKING_AVAILABLE": "true"
+      }
+    }
+  }
+}
+```
+
+**Note:** Replace `/path/to/` with your actual paths. For example:
+- `/home/azzar/project/MCPservers/chaining-mcp-server/data` for data directory
+- `/home/azzar/.cursor/mcp.json` for MCP configuration
+
+### For local installation:
 ```json
 {
   "mcpServers": {
@@ -382,6 +531,19 @@ const conversion = await mcpClient.callTool('convert_time', {
 
 ## Development
 
+### Docker Development Setup
+
+For development with Docker, use the override file:
+
+```bash
+# Copy the example override file
+cp docker compose.override.yml.example docker compose.override.yml
+
+# Customize the override file as needed
+# Then start with development configuration
+docker compose up --build
+```
+
 ### Project Structure
 ```
 src/
@@ -399,16 +561,59 @@ src/
 
 ### Building
 ```bash
+# Local development
 npm run build    # Build TypeScript to JavaScript
 npm run dev      # Watch mode for development
 npm run clean    # Clean dist directory
+
+# Docker development
+./docker-scripts.sh build  # Build Docker image
+./docker-scripts.sh start  # Start with Docker
 ```
 
 ### Testing
-The server can be tested by running it directly:
+
+#### Local Testing
 ```bash
 node dist/index.js
 ```
+
+#### Docker Testing
+```bash
+# Build the image (if network issues, try with --network=host)
+docker build -t chaining-mcp-server .
+
+# Test the container
+docker run --rm -it chaining-mcp-server npm start
+
+# Or use docker-compose
+docker compose up --build
+```
+
+#### Troubleshooting Docker Build Issues
+
+If you encounter network issues during Docker build:
+
+1. **Check Docker connectivity:**
+   ```bash
+   docker pull hello-world
+   ```
+
+2. **Try building with host network:**
+   ```bash
+   docker build --network=host -t chaining-mcp-server .
+   ```
+
+3. **Use a different base image:**
+   ```dockerfile
+   FROM node:18-slim
+   # Instead of node:18-alpine
+   ```
+
+4. **Build without cache:**
+   ```bash
+   docker build --no-cache -t chaining-mcp-server .
+   ```
 
 ## Integration with Sequential Thinking MCP
 

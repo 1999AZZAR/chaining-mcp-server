@@ -103,3 +103,7 @@ temp/
 # MCP server specific
 mcp-servers.json
 demo-servers/
+
+# Docker specific
+data/
+docker-compose.override.yml
