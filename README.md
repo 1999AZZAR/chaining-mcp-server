@@ -34,25 +34,55 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Robust Error Handling**: Improved validation and error handling across all components
 - **Enhanced Time Management**: Better timezone handling with proper DST detection
 - **Advanced Sequential Thinking**: Enhanced thought processing with branching and revision support
+- **Prebuilt Prompts & Resources**: Curated collection of prompts and resource sets for common development tasks
+- **Intelligent Tool Guidance**: Structured guidance to help models effectively use available toolsets
 
-## Recent Refinements
+## Prebuilt Prompts & Resource Sets
 
-This server has been refined to properly integrate and enhance the implementations from the "add to chaining" components:
+The chaining MCP server now includes a comprehensive collection of prebuilt prompts and resource sets designed to help models effectively use the available toolsets for development, debugging, analysis, and common workflows.
 
-### Memory Component Enhancements
-- **Robust Knowledge Graph**: Enhanced entity and relation management
-- **Improved Search**: Better search functionality across entities and observations
-- **Persistent Storage**: Reliable file-based storage with proper error handling
+### Prebuilt Prompts
 
-### Sequential Thinking Enhancements
-- **Enhanced Validation**: More robust input validation with detailed error messages
-- **Advanced Features**: Added thought history, statistics, and branch management
-- **Better Error Handling**: Improved error handling and recovery mechanisms
+Prebuilt prompts provide structured guidance for specific development tasks:
 
-### Time Management Enhancements
-- **Improved Timezone Handling**: Better timezone detection and conversion
-- **Enhanced DST Detection**: More accurate daylight saving time detection
-- **Additional Utilities**: Added common timezone list and local timezone detection
+- **Development Prompts**: Project analysis, feature implementation, code refactoring
+- **Debugging Prompts**: Error tracing, performance optimization, security auditing
+- **Analysis Prompts**: Dependency analysis, tool chaining basics
+- **Knowledge Management**: Memory and knowledge graph usage
+- **Sequential Thinking**: Complex problem-solving workflows
+
+Each prompt includes:
+- Clear task description and objectives
+- Step-by-step guidance
+- Expected tools to use
+- Complexity level (low/medium/high)
+- Relevant tags for easy discovery
+
+### Resource Sets
+
+Resource sets are curated collections of prompts, workflows, templates, and examples for specific scenarios:
+
+- **Development Starter Kit**: Essential resources for new development tasks
+- **Debugging Toolbox**: Comprehensive debugging techniques and workflows
+- **Performance Optimization Kit**: Tools for performance analysis and improvement
+- **Tool Chaining Mastery**: Advanced techniques for complex tool orchestration
+- **Knowledge Management Suite**: Resources for building and maintaining project knowledge
+
+Each resource set contains:
+- Multiple resources (prompts, workflows, templates, examples)
+- Complexity rating
+- Category classification
+- Descriptive tags
+
+### Benefits for Models
+
+These prebuilt prompts and resource sets help models:
+
+1. **Understand Tool Capabilities**: Learn how to effectively combine and use available tools
+2. **Follow Best Practices**: Apply proven workflows and techniques
+3. **Handle Complex Tasks**: Break down complex problems into manageable steps
+4. **Maintain Consistency**: Use standardized approaches across similar tasks
+5. **Accelerate Learning**: Build knowledge over time through structured guidance
 
 ## Installation
 
@@ -399,6 +429,42 @@ Convert time between timezones.
 
 **Output**: JSON object with source and target times, plus time difference.
 
+#### 18. `get_prompt`
+Get a specific prebuilt prompt by ID.
+
+**Input**:
+- `id` (required): The ID of the prompt to retrieve
+
+**Output**: JSON object containing the complete prompt with its content and metadata.
+
+#### 19. `search_prompts`
+Search for prompts by keywords, category, or tags.
+
+**Input**:
+- `query` (required): Search query to match against prompt names, descriptions, categories, or tags
+- `category` (optional): Filter by category (development, debugging, etc.)
+- `complexity` (optional): Filter by complexity level (low, medium, high)
+
+**Output**: JSON object with matching prompts and their metadata.
+
+#### 20. `get_resource_set`
+Get a specific resource set by ID.
+
+**Input**:
+- `id` (required): The ID of the resource set to retrieve
+
+**Output**: JSON object containing the complete resource set with all its resources.
+
+#### 21. `search_resource_sets`
+Search for resource sets by keywords, category, or tags.
+
+**Input**:
+- `query` (required): Search query to match against resource set names, descriptions, categories, or tags
+- `category` (optional): Filter by category (development, debugging, etc.)
+- `complexity` (optional): Filter by complexity level (low, medium, high)
+
+**Output**: JSON object with matching resource sets and their metadata.
+
 ## Available Resources
 
 ### `chaining://servers`
@@ -409,6 +475,15 @@ Returns a JSON list of all available tools from discovered servers.
 
 ### `chaining://analysis`
 Returns a JSON summary of the current analysis state.
+
+### `chaining://prompts`
+Returns a JSON collection of all available prebuilt prompts for common development tasks.
+
+### `chaining://resources`
+Returns a JSON collection of curated resource sets for different development scenarios.
+
+### `chaining://prompts/overview`
+Returns a JSON overview of available prompts by category and complexity level.
 
 ## Usage Examples
 
@@ -520,6 +595,53 @@ const conversion = await mcpClient.callTool('convert_time', {
   time: '14:30',
   target_timezone: 'Asia/Tokyo'
 });
+```
+
+### Prebuilt Prompts & Resources
+
+```javascript
+// Get a specific prebuilt prompt
+const prompt = await mcpClient.callTool('get_prompt', {
+  id: 'analyze-project-structure'
+});
+console.log(prompt);
+
+// Search for prompts by keyword
+const searchResults = await mcpClient.callTool('search_prompts', {
+  query: 'debugging',
+  category: 'development',
+  complexity: 'medium'
+});
+console.log(searchResults);
+
+// Get a resource set
+const resourceSet = await mcpClient.callTool('get_resource_set', {
+  id: 'development-starter-kit'
+});
+console.log(resourceSet);
+
+// Search for resource sets
+const resourceSearch = await mcpClient.callTool('search_resource_sets', {
+  query: 'performance',
+  complexity: 'high'
+});
+console.log(resourceSearch);
+```
+
+### Accessing Resources
+
+```javascript
+// Get all available prompts
+const allPrompts = await mcpClient.readResource('chaining://prompts');
+console.log(allPrompts);
+
+// Get all resource sets
+const allResources = await mcpClient.readResource('chaining://resources');
+console.log(allResources);
+
+// Get prompts overview
+const overview = await mcpClient.readResource('chaining://prompts/overview');
+console.log(overview);
 ```
 
 ## Environment Variables

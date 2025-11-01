@@ -14,6 +14,7 @@ import { SequentialThinkingIntegration } from './sequential-integration.js';
 import { KnowledgeGraphManager } from './memory-manager.js';
 import { SequentialThinkingManager } from './sequential-thinking-manager.js';
 import { TimeManager } from './time-manager.js';
+import { PromptManager } from './prompt-manager.js';
 import {
   OptimizationCriteriaSchema,
   SequentialThinkingRequestSchema,
@@ -45,6 +46,7 @@ export class ChainingMCPServer {
   private memoryManager: KnowledgeGraphManager;
   private sequentialThinkingManager: SequentialThinkingManager;
   private timeManager: TimeManager;
+  private promptManager: PromptManager;
   private isInitialized: boolean = false;
 
   constructor() {
@@ -67,6 +69,7 @@ export class ChainingMCPServer {
     this.memoryManager = new KnowledgeGraphManager();
     this.sequentialThinkingManager = new SequentialThinkingManager();
     this.timeManager = new TimeManager();
+    this.promptManager = new PromptManager();
 
     this.setupHandlers();
   }
@@ -190,6 +193,81 @@ Key features:
             description: 'Convert time between timezones',
             inputSchema: getToolInputSchema(ConvertTimeSchema),
           },
+          // Prompt and Resource tools
+          {
+            name: 'get_prompt',
+            description: 'Get a specific prebuilt prompt by ID',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  description: 'The ID of the prompt to retrieve',
+                },
+              },
+              required: ['id'],
+            },
+          },
+          {
+            name: 'search_prompts',
+            description: 'Search for prompts by keywords, category, or tags',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'string',
+                  description: 'Search query to match against prompt names, descriptions, categories, or tags',
+                },
+                category: {
+                  type: 'string',
+                  description: 'Optional: Filter by category (development, debugging, etc.)',
+                },
+                complexity: {
+                  type: 'string',
+                  enum: ['low', 'medium', 'high'],
+                  description: 'Optional: Filter by complexity level',
+                },
+              },
+              required: ['query'],
+            },
+          },
+          {
+            name: 'get_resource_set',
+            description: 'Get a specific resource set by ID',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  description: 'The ID of the resource set to retrieve',
+                },
+              },
+              required: ['id'],
+            },
+          },
+          {
+            name: 'search_resource_sets',
+            description: 'Search for resource sets by keywords, category, or tags',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'string',
+                  description: 'Search query to match against resource set names, descriptions, categories, or tags',
+                },
+                category: {
+                  type: 'string',
+                  description: 'Optional: Filter by category (development, debugging, etc.)',
+                },
+                complexity: {
+                  type: 'string',
+                  enum: ['low', 'medium', 'high'],
+                  description: 'Optional: Filter by complexity level',
+                },
+              },
+              required: ['query'],
+            },
+          },
         ],
       };
     });
@@ -214,6 +292,24 @@ Key features:
             uri: 'chaining://analysis',
             name: 'Tool Chain Analysis',
             description: 'Analysis of tool chains and optimization suggestions',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'chaining://prompts',
+            name: 'Prebuilt Prompts',
+            description: 'Collection of prebuilt prompts for common development tasks',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'chaining://resources',
+            name: 'Resource Sets',
+            description: 'Curated resource sets for different development scenarios',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'chaining://prompts/overview',
+            name: 'Prompts Overview',
+            description: 'Overview of available prompts by category and complexity',
             mimeType: 'application/json',
           },
         ],
@@ -263,6 +359,68 @@ Key features:
                 uri,
                 mimeType: 'application/json',
                 text: JSON.stringify(analysis, null, 2),
+              },
+            ],
+          };
+
+        case 'chaining://prompts':
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  prompts: this.promptManager.getAllPrompts().map(prompt => ({
+                    id: prompt.id,
+                    name: prompt.name,
+                    description: prompt.description,
+                    category: prompt.category,
+                    tags: prompt.tags,
+                    complexity: prompt.complexity,
+                    useCase: prompt.useCase,
+                    expectedTools: prompt.expectedTools,
+                  })),
+                  total: this.promptManager.getAllPrompts().length,
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
+        case 'chaining://resources':
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  resourceSets: this.promptManager.getAllResourceSets().map(set => ({
+                    id: set.id,
+                    name: set.name,
+                    description: set.description,
+                    category: set.category,
+                    tags: set.tags,
+                    complexity: set.complexity,
+                    resourceCount: set.resources.length,
+                  })),
+                  total: this.promptManager.getAllResourceSets().length,
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
+        case 'chaining://prompts/overview':
+          const overview = this.promptManager.getResourceOverview();
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  ...overview,
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
               },
             ],
           };
@@ -334,6 +492,19 @@ Key features:
 
           case 'convert_time':
             return await this.handleConvertTime(args);
+
+          // Prompt and Resource tools
+          case 'get_prompt':
+            return await this.handleGetPrompt(args);
+
+          case 'search_prompts':
+            return await this.handleSearchPrompts(args);
+
+          case 'get_resource_set':
+            return await this.handleGetResourceSet(args);
+
+          case 'search_resource_sets':
+            return await this.handleSearchResourceSets(args);
 
           default:
             throw new Error(`Unknown tool: ${name}`);
@@ -1057,6 +1228,177 @@ Please check the tool parameters and try again.`;
         {
           type: 'text',
           text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle get prompt request
+   */
+  private async handleGetPrompt(args: any) {
+    const { id } = args;
+
+    if (!id || typeof id !== 'string') {
+      throw new Error('Prompt ID is required and must be a string');
+    }
+
+    const prompt = this.promptManager.getPrompt(id);
+    if (!prompt) {
+      throw new Error(`Prompt with ID '${id}' not found`);
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            prompt: {
+              id: prompt.id,
+              name: prompt.name,
+              description: prompt.description,
+              category: prompt.category,
+              tags: prompt.tags,
+              complexity: prompt.complexity,
+              useCase: prompt.useCase,
+              expectedTools: prompt.expectedTools,
+              prompt: prompt.prompt,
+            },
+            timestamp: new Date().toISOString(),
+          }, null, 2),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle search prompts request
+   */
+  private async handleSearchPrompts(args: any) {
+    const { query, category, complexity } = args;
+
+    if (!query || typeof query !== 'string') {
+      throw new Error('Search query is required and must be a string');
+    }
+
+    let prompts = this.promptManager.searchPrompts(query);
+
+    // Apply additional filters
+    if (category && typeof category === 'string') {
+      prompts = prompts.filter(prompt => prompt.category === category);
+    }
+
+    if (complexity && ['low', 'medium', 'high'].includes(complexity)) {
+      prompts = prompts.filter(prompt => prompt.complexity === complexity);
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            query,
+            filters: {
+              category: category || null,
+              complexity: complexity || null,
+            },
+            results: prompts.map(prompt => ({
+              id: prompt.id,
+              name: prompt.name,
+              description: prompt.description,
+              category: prompt.category,
+              tags: prompt.tags,
+              complexity: prompt.complexity,
+              useCase: prompt.useCase,
+              expectedTools: prompt.expectedTools,
+            })),
+            total: prompts.length,
+            timestamp: new Date().toISOString(),
+          }, null, 2),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle get resource set request
+   */
+  private async handleGetResourceSet(args: any) {
+    const { id } = args;
+
+    if (!id || typeof id !== 'string') {
+      throw new Error('Resource set ID is required and must be a string');
+    }
+
+    const resourceSet = this.promptManager.getResourceSet(id);
+    if (!resourceSet) {
+      throw new Error(`Resource set with ID '${id}' not found`);
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            resourceSet: {
+              id: resourceSet.id,
+              name: resourceSet.name,
+              description: resourceSet.description,
+              category: resourceSet.category,
+              tags: resourceSet.tags,
+              complexity: resourceSet.complexity,
+              resources: resourceSet.resources,
+            },
+            timestamp: new Date().toISOString(),
+          }, null, 2),
+        },
+      ],
+    };
+  }
+
+  /**
+   * Handle search resource sets request
+   */
+  private async handleSearchResourceSets(args: any) {
+    const { query, category, complexity } = args;
+
+    if (!query || typeof query !== 'string') {
+      throw new Error('Search query is required and must be a string');
+    }
+
+    let resourceSets = this.promptManager.searchResourceSets(query);
+
+    // Apply additional filters
+    if (category && typeof category === 'string') {
+      resourceSets = resourceSets.filter(set => set.category === category);
+    }
+
+    if (complexity && ['low', 'medium', 'high'].includes(complexity)) {
+      resourceSets = resourceSets.filter(set => set.complexity === complexity);
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            query,
+            filters: {
+              category: category || null,
+              complexity: complexity || null,
+            },
+            results: resourceSets.map(set => ({
+              id: set.id,
+              name: set.name,
+              description: set.description,
+              category: set.category,
+              tags: set.tags,
+              complexity: set.complexity,
+              resourceCount: set.resources.length,
+            })),
+            total: resourceSets.length,
+            timestamp: new Date().toISOString(),
+          }, null, 2),
         },
       ],
     };
