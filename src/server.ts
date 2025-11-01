@@ -15,7 +15,6 @@ import { SequentialThinkingManager } from './sequential-thinking-manager.js';
 import { TimeManager } from './time-manager.js';
 import { PromptManager } from './prompt-manager.js';
 import { AwesomeCopilotIntegration } from './awesome-copilot-integration.js';
-import { ReliabilityManager } from './reliability-manager.js';
 import {
   OptimizationCriteriaSchema,
   SequentialThinkingRequestSchema,
@@ -40,7 +39,6 @@ export class ChainingMCPServer {
   private timeManager: TimeManager;
   private promptManager: PromptManager;
   private awesomeCopilotIntegration: AwesomeCopilotIntegration;
-  private reliabilityManager: ReliabilityManager;
   private isInitialized: boolean = false;
 
   constructor() {
@@ -64,7 +62,6 @@ export class ChainingMCPServer {
     this.timeManager = new TimeManager();
     this.promptManager = new PromptManager();
     this.awesomeCopilotIntegration = new AwesomeCopilotIntegration();
-    this.reliabilityManager = new ReliabilityManager();
 
     this.setupHandlers();
   }
@@ -288,55 +285,6 @@ Key features:
             description: 'Get the status of awesome-copilot integration',
             inputSchema: { type: 'object', properties: {} },
           },
-          // Reliability tools
-          {
-            name: 'reliability_get_metrics',
-            description: 'Get comprehensive reliability metrics and performance statistics',
-            inputSchema: { type: 'object', properties: {} },
-          },
-          {
-            name: 'reliability_health_check',
-            description: 'Perform a health check on the chaining server',
-            inputSchema: { type: 'object', properties: {} },
-          },
-          {
-            name: 'reliability_reset_metrics',
-            description: 'Reset reliability metrics (useful for testing or after configuration changes)',
-            inputSchema: { type: 'object', properties: {} },
-          },
-          {
-            name: 'reliability_configure_retry',
-            description: 'Configure retry behavior for tool execution',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                maxRetries: {
-                  type: 'number',
-                  description: 'Maximum number of retry attempts',
-                  minimum: 0,
-                  maximum: 10,
-                },
-                backoffMultiplier: {
-                  type: 'number',
-                  description: 'Exponential backoff multiplier',
-                  minimum: 1,
-                  maximum: 5,
-                },
-                initialDelay: {
-                  type: 'number',
-                  description: 'Initial delay in milliseconds',
-                  minimum: 100,
-                  maximum: 10000,
-                },
-                maxDelay: {
-                  type: 'number',
-                  description: 'Maximum delay in milliseconds',
-                  minimum: 1000,
-                  maximum: 120000,
-                },
-              },
-            },
-          },
         ],
       };
     });
@@ -398,19 +346,6 @@ Key features:
             uri: 'chaining://awesome-copilot/status',
             name: 'Awesome Copilot Integration Status',
             description: 'Status and statistics of awesome-copilot integration',
-            mimeType: 'application/json',
-          },
-          // Reliability resources
-          {
-            uri: 'chaining://reliability/metrics',
-            name: 'Reliability Metrics',
-            description: 'Performance and reliability statistics for the chaining server',
-            mimeType: 'application/json',
-          },
-          {
-            uri: 'chaining://reliability/health',
-            name: 'System Health Check',
-            description: 'Current health status of the chaining server',
             mimeType: 'application/json',
           },
         ],
@@ -583,34 +518,6 @@ Key features:
             ],
           };
 
-        case 'chaining://reliability/metrics':
-          return {
-            contents: [
-              {
-                uri,
-                mimeType: 'application/json',
-                text: JSON.stringify({
-                  ...this.reliabilityManager.getMetrics(),
-                  timestamp: new Date().toISOString(),
-                }, null, 2),
-              },
-            ],
-          };
-
-        case 'chaining://reliability/health':
-          return {
-            contents: [
-              {
-                uri,
-                mimeType: 'application/json',
-                text: JSON.stringify({
-                  ...this.reliabilityManager.healthCheck(),
-                  timestamp: new Date().toISOString(),
-                }, null, 2),
-              },
-            ],
-          };
-
         default:
           throw new Error(`Unknown resource: ${uri}`);
       }
@@ -684,19 +591,6 @@ Key features:
           case 'awesome_copilot_get_integration_status':
             return await this.handleAwesomeCopilotGetIntegrationStatus();
 
-          // Reliability tools
-          case 'reliability_get_metrics':
-            return await this.handleReliabilityGetMetrics();
-
-          case 'reliability_health_check':
-            return await this.handleReliabilityHealthCheck();
-
-          case 'reliability_reset_metrics':
-            return await this.handleReliabilityResetMetrics();
-
-          case 'reliability_configure_retry':
-            return await this.handleReliabilityConfigureRetry(args);
-
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -721,7 +615,8 @@ Key features:
    * Format error messages with enhanced information and suggestions
    */
   private formatErrorMessage(error: unknown, toolName: string, args: any): string {
-    return this.reliabilityManager.formatEnhancedError(error, toolName, args);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return `Tool execution failed for '${toolName}': ${errorMessage}`;
   }
 
   /**
@@ -1570,125 +1465,6 @@ Key features:
     }
   }
 
-  /**
-   * Handle reliability get metrics request
-   */
-  private async handleReliabilityGetMetrics() {
-    try {
-      const metrics = this.reliabilityManager.getMetrics();
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              ...metrics,
-              timestamp: new Date().toISOString(),
-            }, null, 2),
-          },
-        ],
-      };
-    } catch (error) {
-      throw new Error(`Failed to get reliability metrics: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * Handle reliability health check request
-   */
-  private async handleReliabilityHealthCheck() {
-    try {
-      const health = this.reliabilityManager.healthCheck();
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              ...health,
-              timestamp: new Date().toISOString(),
-            }, null, 2),
-          },
-        ],
-      };
-    } catch (error) {
-      throw new Error(`Failed to perform health check: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * Handle reliability reset metrics request
-   */
-  private async handleReliabilityResetMetrics() {
-    try {
-      this.reliabilityManager.resetMetrics();
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: 'Reliability metrics have been reset successfully. This will help improve future performance analysis.',
-          },
-        ],
-      };
-    } catch (error) {
-      throw new Error(`Failed to reset reliability metrics: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * Handle reliability configure retry request
-   */
-  private async handleReliabilityConfigureRetry(args: any) {
-    try {
-      const { maxRetries, backoffMultiplier, initialDelay, maxDelay } = args;
-
-      // Validate inputs
-      if (maxRetries !== undefined && (maxRetries < 0 || maxRetries > 10)) {
-        throw new Error('maxRetries must be between 0 and 10');
-      }
-
-      if (backoffMultiplier !== undefined && (backoffMultiplier < 1 || backoffMultiplier > 5)) {
-        throw new Error('backoffMultiplier must be between 1 and 5');
-      }
-
-      if (initialDelay !== undefined && (initialDelay < 100 || initialDelay > 10000)) {
-        throw new Error('initialDelay must be between 100 and 10000 milliseconds');
-      }
-
-      if (maxDelay !== undefined && (maxDelay < 1000 || maxDelay > 120000)) {
-        throw new Error('maxDelay must be between 1000 and 120000 milliseconds');
-      }
-
-      // Configure retry behavior
-      this.reliabilityManager.setRetryConfig({
-        maxRetries,
-        backoffMultiplier,
-        initialDelay,
-        maxDelay,
-      });
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              message: 'Retry configuration updated successfully',
-              newConfig: {
-                maxRetries: maxRetries ?? 3,
-                backoffMultiplier: backoffMultiplier ?? 2,
-                initialDelay: initialDelay ?? 1000,
-                maxDelay: maxDelay ?? 30000,
-              },
-              timestamp: new Date().toISOString(),
-            }, null, 2),
-          },
-        ],
-      };
-    } catch (error) {
-      throw new Error(`Failed to configure retry behavior: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
 
   /**
    * Start the server

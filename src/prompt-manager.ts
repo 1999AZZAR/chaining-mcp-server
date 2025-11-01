@@ -306,6 +306,287 @@ Sequential thinking workflow:
 
 Use this approach for complex debugging, architecture decisions, and multi-step implementations.`,
         expectedTools: ['sequentialthinking', 'analyze_with_sequential_thinking']
+      },
+
+      // MCP Ecosystem and Chaining Prompts
+      {
+        id: 'mcp-ecosystem-exploration',
+        name: 'MCP Ecosystem Exploration',
+        description: 'Discover and analyze the complete MCP server ecosystem available to you',
+        category: 'mcp-ecosystem',
+        tags: ['discovery', 'analysis', 'ecosystem', 'servers', 'capabilities'],
+        complexity: 'medium',
+        useCase: 'Understanding what MCP servers and tools are available for complex workflows',
+        prompt: `Explore the MCP ecosystem to understand available capabilities:
+
+1. **Server Discovery**: Identify all available MCP servers in your environment
+2. **Capability Mapping**: Analyze what tools each server provides
+3. **Integration Opportunities**: Find servers that can work together
+4. **Workflow Planning**: Design multi-server workflows for complex tasks
+5. **Resource Assessment**: Evaluate which servers to use for specific scenarios
+
+Start by listing all MCP servers, then analyze their tools to understand the ecosystem's capabilities.`,
+        expectedTools: ['list_mcp_servers', 'analyze_tools', 'generate_route_suggestions']
+      },
+
+      {
+        id: 'cross-server-data-flow',
+        name: 'Cross-Server Data Flow Design',
+        description: 'Design data flows and orchestrations across multiple MCP servers',
+        category: 'orchestration',
+        tags: ['data-flow', 'orchestration', 'multi-server', 'integration', 'pipelines'],
+        complexity: 'high',
+        useCase: 'Creating complex workflows that span multiple MCP servers',
+        prompt: `Design a cross-server data flow orchestration:
+
+1. **Requirements Analysis**: Understand the data transformation needs
+2. **Server Capability Matching**: Find servers with complementary capabilities
+3. **Data Flow Mapping**: Design the sequence of operations across servers
+4. **Error Handling**: Plan for failures in multi-server operations
+5. **Optimization**: Ensure efficient data transfer between servers
+
+Identify servers that can work together, design the data flow, and implement the orchestration.`,
+        expectedTools: ['analyze_tools', 'generate_route_suggestions', 'get_tool_chain_analysis']
+      },
+
+      {
+        id: 'awesome-copilot-integration-workflow',
+        name: 'Awesome Copilot Integration Workflow',
+        description: 'Leverage awesome-copilot resources for enhanced development workflows',
+        category: 'integration',
+        tags: ['awesome-copilot', 'integration', 'development', 'resources', 'guidance'],
+        complexity: 'medium',
+        useCase: 'Using curated development resources to enhance coding and development tasks',
+        prompt: `Integrate awesome-copilot resources into your development workflow:
+
+1. **Resource Discovery**: Explore available collections and instructions
+2. **Relevance Assessment**: Find resources relevant to your current task
+3. **Integration Planning**: Design how to incorporate these resources
+4. **Workflow Enhancement**: Apply the guidance to improve your process
+5. **Knowledge Transfer**: Learn from the curated development wisdom
+
+Browse collections, search for relevant instructions, and apply them to enhance your development process.`,
+        expectedTools: ['awesome_copilot_list_collections', 'awesome_copilot_search_collections', 'awesome_copilot_get_collection', 'awesome_copilot_search_instructions']
+      },
+
+      {
+        id: 'time-sensitive-task-orchestration',
+        name: 'Time-Sensitive Task Orchestration',
+        description: 'Orchestrate tasks with time constraints and scheduling requirements',
+        category: 'orchestration',
+        tags: ['time-management', 'scheduling', 'deadlines', 'orchestration', 'planning'],
+        complexity: 'high',
+        useCase: 'Managing complex workflows with time constraints and dependencies',
+        prompt: `Orchestrate time-sensitive tasks with precision:
+
+1. **Time Analysis**: Understand timezone requirements and deadlines
+2. **Task Sequencing**: Order operations based on time constraints
+3. **Dependency Management**: Handle time-dependent task relationships
+4. **Scheduling Optimization**: Optimize execution timing across timezones
+5. **Progress Monitoring**: Track time-sensitive progress and adjustments
+
+Convert between timezones, plan task sequences, and execute with time awareness.`,
+        expectedTools: ['get_current_time', 'convert_time', 'sequentialthinking', 'generate_route_suggestions']
+      },
+
+      {
+        id: 'multi-server-debugging-orchestration',
+        name: 'Multi-Server Debugging Orchestration',
+        description: 'Debug issues that span multiple MCP servers and systems',
+        category: 'debugging',
+        tags: ['debugging', 'multi-server', 'orchestration', 'tracing', 'cross-system'],
+        complexity: 'high',
+        useCase: 'Debugging complex issues that involve multiple MCP servers',
+        prompt: `Orchestrate debugging across multiple MCP servers:
+
+1. **Issue Scope Analysis**: Determine which servers are involved
+2. **Server State Inspection**: Check the state of relevant servers
+3. **Cross-Server Tracing**: Trace data flow and state changes across servers
+4. **Root Cause Isolation**: Identify which server/component is causing the issue
+5. **Coordinated Resolution**: Implement fixes that may span multiple servers
+
+Systematically debug issues that involve multiple MCP servers working together.`,
+        expectedTools: ['list_mcp_servers', 'analyze_tools', 'sequentialthinking', 'awesome_copilot_search_instructions']
+      },
+
+      {
+        id: 'intelligent-route-optimization',
+        name: 'Intelligent Route Optimization',
+        description: 'Optimize execution routes for complex multi-step tasks',
+        category: 'optimization',
+        tags: ['optimization', 'routing', 'efficiency', 'planning', 'execution'],
+        complexity: 'high',
+        useCase: 'Finding the most efficient way to execute complex tasks across available tools',
+        prompt: `Optimize routes for complex task execution:
+
+1. **Task Decomposition**: Break down complex tasks into manageable steps
+2. **Capability Analysis**: Understand what tools can perform each step
+3. **Route Generation**: Generate multiple possible execution paths
+4. **Efficiency Analysis**: Compare routes for performance and reliability
+5. **Optimal Selection**: Choose the best route and execute it
+
+Analyze available tools, generate route suggestions, and optimize for your specific task requirements.`,
+        expectedTools: ['analyze_tools', 'generate_route_suggestions', 'get_tool_chain_analysis', 'sequentialthinking']
+      },
+
+      {
+        id: 'server-capability-mapping',
+        name: 'Server Capability Mapping',
+        description: 'Create comprehensive maps of MCP server capabilities and relationships',
+        category: 'analysis',
+        tags: ['mapping', 'capabilities', 'analysis', 'relationships', 'planning'],
+        complexity: 'medium',
+        useCase: 'Understanding and planning with the full MCP server ecosystem',
+        prompt: `Map MCP server capabilities comprehensively:
+
+1. **Server Inventory**: Catalog all available MCP servers
+2. **Tool Analysis**: Deep dive into each server's tool capabilities
+3. **Relationship Mapping**: Identify how servers can complement each other
+4. **Use Case Planning**: Design workflows leveraging multiple servers
+5. **Capability Gaps**: Identify areas where additional servers would be beneficial
+
+Create a complete understanding of your MCP ecosystem for better planning and execution.`,
+        expectedTools: ['list_mcp_servers', 'analyze_tools', 'generate_route_suggestions', 'get_tool_chain_analysis']
+      },
+
+      {
+        id: 'dynamic-workflow-adaptation',
+        name: 'Dynamic Workflow Adaptation',
+        description: 'Adapt workflows dynamically based on runtime conditions and server availability',
+        category: 'orchestration',
+        tags: ['dynamic', 'adaptation', 'workflows', 'flexibility', 'runtime'],
+        complexity: 'high',
+        useCase: 'Creating flexible workflows that adapt to changing conditions',
+        prompt: `Design workflows that adapt to runtime conditions:
+
+1. **Condition Analysis**: Identify factors that might change during execution
+2. **Contingency Planning**: Design alternative paths for different scenarios
+3. **Dynamic Routing**: Implement logic to choose paths based on current state
+4. **Server Availability**: Handle cases where servers become unavailable
+5. **Adaptive Execution**: Execute workflows that can pivot based on results
+
+Create robust workflows that can adapt to changing MCP server conditions and requirements.`,
+        expectedTools: ['list_mcp_servers', 'analyze_tools', 'generate_route_suggestions', 'sequentialthinking']
+      },
+
+      {
+        id: 'knowledge-graph-enhanced-chaining',
+        name: 'Knowledge Graph Enhanced Chaining',
+        description: 'Leverage knowledge graphs for intelligent tool chaining decisions',
+        category: 'integration',
+        tags: ['knowledge-graph', 'intelligence', 'chaining', 'context', 'relationships'],
+        complexity: 'high',
+        useCase: 'Using structured knowledge to make better tool chaining decisions',
+        prompt: `Enhance tool chaining with knowledge graph insights:
+
+1. **Context Understanding**: Use knowledge graphs to understand task context
+2. **Relationship Analysis**: Identify related entities and their connections
+3. **Intelligent Routing**: Make chaining decisions based on knowledge relationships
+4. **Context Preservation**: Maintain context across chained operations
+5. **Learning Integration**: Incorporate past experiences into routing decisions
+
+Combine knowledge management with tool chaining for more intelligent execution.`,
+        expectedTools: ['get_tool_chain_analysis', 'generate_route_suggestions', 'sequentialthinking']
+      },
+
+      {
+        id: 'collaborative-development-orchestration',
+        name: 'Collaborative Development Orchestration',
+        description: 'Orchestrate development tasks across team members and MCP servers',
+        category: 'collaboration',
+        tags: ['collaboration', 'team', 'orchestration', 'development', 'coordination'],
+        complexity: 'high',
+        useCase: 'Coordinating complex development tasks across team members and tools',
+        prompt: `Orchestrate collaborative development workflows:
+
+1. **Task Decomposition**: Break down complex features into manageable tasks
+2. **Team Capability Mapping**: Understand team members' strengths and availability
+3. **Tool Assignment**: Assign appropriate MCP servers/tools to each task
+4. **Progress Coordination**: Track and coordinate progress across tasks
+5. **Integration Planning**: Plan how individual contributions integrate together
+
+Coordinate complex development efforts using multiple MCP servers and team capabilities.`,
+        expectedTools: ['generate_route_suggestions', 'analyze_tools', 'sequentialthinking', 'get_tool_chain_analysis']
+      },
+
+      {
+        id: 'automated-quality-assurance',
+        name: 'Automated Quality Assurance Orchestration',
+        description: 'Orchestrate comprehensive QA processes across multiple tools and servers',
+        category: 'quality',
+        tags: ['qa', 'testing', 'automation', 'quality', 'validation'],
+        complexity: 'high',
+        useCase: 'Running comprehensive quality assurance across multiple validation tools',
+        prompt: `Orchestrate automated quality assurance processes:
+
+1. **Test Planning**: Design comprehensive test suites across multiple dimensions
+2. **Tool Coordination**: Coordinate multiple testing and validation tools
+3. **Result Aggregation**: Collect and analyze results from multiple sources
+4. **Issue Prioritization**: Identify and prioritize issues based on impact
+5. **Remediation Planning**: Plan fixes and improvements based on findings
+
+Execute comprehensive QA processes using multiple MCP servers and specialized tools.`,
+        expectedTools: ['generate_route_suggestions', 'analyze_tools', 'sequentialthinking', 'awesome_copilot_search_instructions']
+      },
+
+      {
+        id: 'intelligent-resource-discovery',
+        name: 'Intelligent Resource Discovery',
+        description: 'Discover and leverage resources across the MCP ecosystem intelligently',
+        category: 'discovery',
+        tags: ['discovery', 'resources', 'intelligence', 'exploration', 'learning'],
+        complexity: 'medium',
+        useCase: 'Finding and utilizing the best resources for specific development tasks',
+        prompt: `Intelligently discover and leverage MCP ecosystem resources:
+
+1. **Resource Inventory**: Catalog all available resources across servers
+2. **Relevance Analysis**: Determine which resources are most relevant to your task
+3. **Quality Assessment**: Evaluate resource quality and applicability
+4. **Integration Planning**: Plan how to incorporate discovered resources
+5. **Knowledge Synthesis**: Combine insights from multiple resource sources
+
+Discover and utilize the full spectrum of resources available in your MCP ecosystem.`,
+        expectedTools: ['list_mcp_servers', 'analyze_tools', 'awesome_copilot_list_collections', 'awesome_copilot_search_collections']
+      },
+
+      {
+        id: 'predictive-workflow-optimization',
+        name: 'Predictive Workflow Optimization',
+        description: 'Optimize workflows based on predicted outcomes and historical patterns',
+        category: 'optimization',
+        tags: ['predictive', 'optimization', 'patterns', 'forecasting', 'efficiency'],
+        complexity: 'high',
+        useCase: 'Creating workflows that anticipate issues and optimize for success',
+        prompt: `Implement predictive workflow optimization:
+
+1. **Pattern Analysis**: Analyze historical execution patterns and outcomes
+2. **Risk Prediction**: Identify potential failure points and bottlenecks
+3. **Optimization Planning**: Design workflows that avoid predicted issues
+4. **Contingency Integration**: Include fallback strategies for predicted problems
+5. **Continuous Learning**: Update predictions based on new execution results
+
+Create workflows that learn from past executions to optimize future performance.`,
+        expectedTools: ['generate_route_suggestions', 'analyze_tools', 'sequentialthinking', 'get_tool_chain_analysis']
+      },
+
+      {
+        id: 'enterprise-integration-orchestration',
+        name: 'Enterprise Integration Orchestration',
+        description: 'Orchestrate complex enterprise-level integrations across multiple systems',
+        category: 'enterprise',
+        tags: ['enterprise', 'integration', 'orchestration', 'systems', 'complexity'],
+        complexity: 'high',
+        useCase: 'Managing complex integrations across enterprise systems and MCP servers',
+        prompt: `Orchestrate enterprise-level system integrations:
+
+1. **System Analysis**: Understand all systems that need to be integrated
+2. **Data Flow Design**: Design data flows between enterprise systems
+3. **Integration Planning**: Plan integration points and transformation logic
+4. **Error Handling**: Design robust error handling for enterprise environments
+5. **Monitoring Setup**: Establish monitoring for integration health and performance
+
+Manage complex enterprise integrations using coordinated MCP server capabilities.`,
+        expectedTools: ['analyze_tools', 'generate_route_suggestions', 'sequentialthinking', 'get_tool_chain_analysis']
       }
     ];
 

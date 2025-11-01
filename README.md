@@ -1,6 +1,6 @@
 # Comprehensive Chaining MCP Server
 
-A refined and unified Model Context Protocol (MCP) server that combines intelligent tool chaining, route optimization, sequential thinking, time management, and development guidance capabilities. This server discovers available MCP servers on your system, analyzes their tools, and provides a complete toolkit for complex task execution with enhanced reliability and awesome-copilot integration.
+A refined and unified Model Context Protocol (MCP) server that combines intelligent tool chaining, route optimization, sequential thinking, time management, and development guidance capabilities. This server discovers available MCP servers on your system, analyzes their tools, and provides a complete toolkit for complex task execution with awesome-copilot integration.
 
 ## Features
 
@@ -15,12 +15,6 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Instructions Loading**: Access detailed development instructions and guides
 - **Smart Caching**: Efficient storage and retrieval of development resources
 - **Expert Guidance**: Direct access to curated development knowledge and best practices
-
-### Reliability & Monitoring
-- **Performance Metrics**: Track response times, error rates, and uptime
-- **Health Monitoring**: Automated health checks and system status
-- **Retry Logic**: Exponential backoff for failed operations
-- **Enhanced Error Handling**: Context-aware error reporting with actionable suggestions
 
 ### Advanced Thinking Capabilities
 - **Sequential Thinking**: Dynamic problem-solving through structured thinking process
@@ -41,23 +35,26 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Enhanced Time Management**: Better timezone handling with proper DST detection
 - **Advanced Sequential Thinking**: Enhanced thought processing with branching and revision support
 - **Awesome Copilot Integration**: Direct access to curated development collections and instructions
-- **Reliability Monitoring**: Performance metrics and health checks with automatic recovery
-- **Prebuilt Prompts & Resources**: Curated collection of prompts and resource sets for common development tasks
+- **27 Prompts & 5 Resource Sets**: Comprehensive collection covering development, orchestration, MCP ecosystem workflows, and development guidance
 - **Intelligent Tool Guidance**: Structured guidance to help models effectively use available toolsets
 
 ## Prebuilt Prompts & Resource Sets
 
-The chaining MCP server now includes a comprehensive collection of prebuilt prompts and resource sets designed to help models effectively use the available toolsets for development, debugging, analysis, and common workflows.
+The chaining MCP server now includes a comprehensive collection of 27 prebuilt prompts and 5 resource sets designed to help models effectively use the available toolsets for development, debugging, orchestration, and MCP ecosystem workflows. The prompts are organized into specialized categories including MCP ecosystem exploration, cross-server orchestration, time-sensitive operations, intelligent routing, and collaborative development.
 
 ### Prebuilt Prompts
 
 Prebuilt prompts provide structured guidance for specific development tasks:
 
 - **Development Prompts**: Project analysis, feature implementation, code refactoring
-- **Debugging Prompts**: Error tracing, performance optimization, security auditing
-- **Analysis Prompts**: Dependency analysis, tool chaining basics
-- **Awesome Copilot**: Access to development collections and instructions
-- **Sequential Thinking**: Complex problem-solving workflows
+- **Debugging Prompts**: Error tracing, performance optimization, security auditing, multi-server debugging
+- **Analysis Prompts**: Dependency analysis, tool chaining basics, capability mapping
+- **MCP Ecosystem**: Server discovery, cross-server orchestration, intelligent routing
+- **Orchestration**: Time-sensitive tasks, dynamic workflows, enterprise integration
+- **Integration**: Awesome Copilot workflows, knowledge graph enhanced chaining
+- **Collaboration**: Team development orchestration, quality assurance automation
+- **Optimization**: Predictive workflows, intelligent resource discovery
+- **Sequential Thinking**: Complex problem-solving and thought processing workflows
 
 Each prompt includes:
 - Clear task description and objectives
@@ -378,43 +375,9 @@ Get the status of awesome-copilot integration.
 
 **Output**: JSON object with integration status, collections count, and last update time.
 
-### Reliability Tools
-
-#### 12. `reliability_get_metrics`
-Get comprehensive reliability metrics and performance statistics.
-
-**Input**: None
-
-**Output**: JSON object with performance metrics, error rates, and request history.
-
-#### 13. `reliability_health_check`
-Perform a health check on the chaining server.
-
-**Input**: None
-
-**Output**: JSON object with health status, metrics, and recommendations.
-
-#### 14. `reliability_reset_metrics`
-Reset reliability metrics (useful for testing or after configuration changes).
-
-**Input**: None
-
-**Output**: Success message confirming metrics reset.
-
-#### 15. `reliability_configure_retry`
-Configure retry behavior for tool execution.
-
-**Input**:
-- `maxRetries` (optional): Maximum number of retry attempts (0-10)
-- `backoffMultiplier` (optional): Exponential backoff multiplier (1-5)
-- `initialDelay` (optional): Initial delay in milliseconds (100-10000)
-- `maxDelay` (optional): Maximum delay in milliseconds (1000-120000)
-
-**Output**: JSON object confirming the new retry configuration.
-
 ### Sequential Thinking Tool
 
-#### 16. `sequentialthinking`
+#### 12. `sequentialthinking`
 A detailed tool for dynamic and reflective problem-solving through thoughts.
 
 **Input**:
@@ -515,12 +478,6 @@ Returns a JSON collection of all available awesome-copilot instructions with the
 ### `chaining://awesome-copilot/status`
 Returns a JSON object with the current status of awesome-copilot integration.
 
-### `chaining://reliability/metrics`
-Returns a JSON object with comprehensive reliability metrics and performance statistics.
-
-### `chaining://reliability/health`
-Returns a JSON object with the current health status of the chaining server.
-
 ## Usage Examples
 
 ### Basic Server Discovery
@@ -591,26 +548,6 @@ const instruction = await mcpClient.callTool('awesome_copilot_load_instruction',
   mode: 'instructions',
   filename: 'typescript-mcp-server.instructions.md'
 });
-```
-
-### Reliability Monitoring
-```javascript
-// Get current reliability metrics
-const metrics = await mcpClient.callTool('reliability_get_metrics', {});
-
-// Perform a health check
-const health = await mcpClient.callTool('reliability_health_check', {});
-
-// Configure retry behavior
-const config = await mcpClient.callTool('reliability_configure_retry', {
-  maxRetries: 5,
-  backoffMultiplier: 2,
-  initialDelay: 500,
-  maxDelay: 15000
-});
-
-// Reset metrics after configuration changes
-await mcpClient.callTool('reliability_reset_metrics', {});
 ```
 
 ### Sequential Thinking
@@ -707,14 +644,6 @@ console.log(instructions);
 // Get awesome-copilot integration status
 const status = await mcpClient.readResource('chaining://awesome-copilot/status');
 console.log(status);
-
-// Get reliability metrics
-const metrics = await mcpClient.readResource('chaining://reliability/metrics');
-console.log(metrics);
-
-// Get health check
-const health = await mcpClient.readResource('chaining://reliability/health');
-console.log(health);
 ```
 
 ## Environment Variables
@@ -723,7 +652,6 @@ console.log(health);
 - `MCP_SERVERS`: JSON string containing additional MCP server configurations
 - `DISABLE_THOUGHT_LOGGING`: Set to 'true' to disable sequential thinking thought logging
 - `AWESOME_COPILOT_ENABLED`: Set to 'false' to disable awesome-copilot integration
-- `RELIABILITY_MONITORING_ENABLED`: Set to 'false' to disable reliability monitoring
 
 ## Development
 
@@ -751,7 +679,6 @@ src/
 ├── sequential-thinking-manager.ts     # Sequential thinking processing
 ├── time-manager.ts                    # Time and timezone management
 ├── awesome-copilot-integration.ts     # Awesome Copilot integration
-├── reliability-manager.ts             # Reliability monitoring and error handling
 ├── prompt-manager.ts                  # Prebuilt prompts and resource sets
 ├── schema-utils.ts                    # Schema utility functions
 └── types.ts                           # Type definitions and Zod schemas
@@ -835,8 +762,7 @@ The server integrates with awesome-copilot to provide:
 The chaining server complements Project-Guardian by:
 1. Providing high-level coordination and orchestration
 2. Offering development guidance and workflow management
-3. Maintaining reliability monitoring and error recovery
-4. Avoiding duplicate functionality (database operations are handled by Project-Guardian)
+3. Avoiding duplicate functionality (database operations are handled by Project-Guardian)
 
 ## License
 
