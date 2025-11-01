@@ -11,10 +11,11 @@ import { z } from 'zod';
 import { MCPServerDiscovery } from './discovery.js';
 import { SmartRouteOptimizer } from './optimizer.js';
 import { SequentialThinkingIntegration } from './sequential-integration.js';
-import { KnowledgeGraphManager } from './memory-manager.js';
 import { SequentialThinkingManager } from './sequential-thinking-manager.js';
 import { TimeManager } from './time-manager.js';
 import { PromptManager } from './prompt-manager.js';
+import { AwesomeCopilotIntegration } from './awesome-copilot-integration.js';
+import { ReliabilityManager } from './reliability-manager.js';
 import {
   OptimizationCriteriaSchema,
   SequentialThinkingRequestSchema,
@@ -24,14 +25,6 @@ import {
   GenerateRouteSuggestionsSchema,
   AnalyzeWithSequentialThinkingSchema,
   GetToolChainAnalysisSchema,
-  CreateEntitiesSchema,
-  CreateRelationsSchema,
-  AddObservationsSchema,
-  DeleteEntitiesSchema,
-  DeleteObservationsSchema,
-  DeleteRelationsSchema,
-  SearchNodesSchema,
-  OpenNodesSchema,
   SequentialThinkingSchema,
   GetCurrentTimeSchema,
   ConvertTimeSchema,
@@ -43,10 +36,11 @@ export class ChainingMCPServer {
   private discovery: MCPServerDiscovery;
   private optimizer: SmartRouteOptimizer;
   private sequentialIntegration: SequentialThinkingIntegration;
-  private memoryManager: KnowledgeGraphManager;
   private sequentialThinkingManager: SequentialThinkingManager;
   private timeManager: TimeManager;
   private promptManager: PromptManager;
+  private awesomeCopilotIntegration: AwesomeCopilotIntegration;
+  private reliabilityManager: ReliabilityManager;
   private isInitialized: boolean = false;
 
   constructor() {
@@ -66,10 +60,11 @@ export class ChainingMCPServer {
     this.discovery = new MCPServerDiscovery();
     this.optimizer = new SmartRouteOptimizer();
     this.sequentialIntegration = new SequentialThinkingIntegration();
-    this.memoryManager = new KnowledgeGraphManager();
     this.sequentialThinkingManager = new SequentialThinkingManager();
     this.timeManager = new TimeManager();
     this.promptManager = new PromptManager();
+    this.awesomeCopilotIntegration = new AwesomeCopilotIntegration();
+    this.reliabilityManager = new ReliabilityManager();
 
     this.setupHandlers();
   }
@@ -107,52 +102,6 @@ export class ChainingMCPServer {
             name: 'get_tool_chain_analysis',
             description: 'Get comprehensive analysis of available tools and suggested routes',
             inputSchema: getToolInputSchema(GetToolChainAnalysisSchema),
-          },
-          // Memory/Knowledge Graph tools
-          {
-            name: 'create_entities',
-            description: 'Create multiple new entities in the knowledge graph',
-            inputSchema: getToolInputSchema(CreateEntitiesSchema),
-          },
-          {
-            name: 'create_relations',
-            description: 'Create multiple new relations between entities in the knowledge graph. Relations should be in active voice',
-            inputSchema: getToolInputSchema(CreateRelationsSchema),
-          },
-          {
-            name: 'add_observations',
-            description: 'Add new observations to existing entities in the knowledge graph',
-            inputSchema: getToolInputSchema(AddObservationsSchema),
-          },
-          {
-            name: 'delete_entities',
-            description: 'Delete multiple entities and their associated relations from the knowledge graph',
-            inputSchema: getToolInputSchema(DeleteEntitiesSchema),
-          },
-          {
-            name: 'delete_observations',
-            description: 'Delete specific observations from entities in the knowledge graph',
-            inputSchema: getToolInputSchema(DeleteObservationsSchema),
-          },
-          {
-            name: 'delete_relations',
-            description: 'Delete multiple relations from the knowledge graph',
-            inputSchema: getToolInputSchema(DeleteRelationsSchema),
-          },
-          {
-            name: 'read_graph',
-            description: 'Read the entire knowledge graph',
-            inputSchema: { type: 'object', properties: {} },
-          },
-          {
-            name: 'search_nodes',
-            description: 'Search for nodes in the knowledge graph based on a query',
-            inputSchema: getToolInputSchema(SearchNodesSchema),
-          },
-          {
-            name: 'open_nodes',
-            description: 'Open specific nodes in the knowledge graph by their names',
-            inputSchema: getToolInputSchema(OpenNodesSchema),
           },
           // Sequential Thinking tool
           {
@@ -268,6 +217,126 @@ Key features:
               required: ['query'],
             },
           },
+          // Awesome Copilot tools
+          {
+            name: 'awesome_copilot_list_collections',
+            description: 'List all available awesome-copilot collections',
+            inputSchema: { type: 'object', properties: {} },
+          },
+          {
+            name: 'awesome_copilot_search_collections',
+            description: 'Search awesome-copilot collections by keywords',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'string',
+                  description: 'Search query to match against collection names, descriptions, or tags',
+                },
+              },
+              required: ['query'],
+            },
+          },
+          {
+            name: 'awesome_copilot_get_collection',
+            description: 'Get a specific awesome-copilot collection by ID',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  description: 'The collection ID to retrieve',
+                },
+              },
+              required: ['id'],
+            },
+          },
+          {
+            name: 'awesome_copilot_search_instructions',
+            description: 'Search awesome-copilot instructions by keywords',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                keywords: {
+                  type: 'string',
+                  description: 'Keywords to search for in instruction titles, descriptions, or tags',
+                },
+              },
+              required: ['keywords'],
+            },
+          },
+          {
+            name: 'awesome_copilot_load_instruction',
+            description: 'Load a specific awesome-copilot instruction',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                mode: {
+                  type: 'string',
+                  description: 'The instruction mode (e.g., "instructions", "prompts")',
+                },
+                filename: {
+                  type: 'string',
+                  description: 'The filename of the instruction to load',
+                },
+              },
+              required: ['mode', 'filename'],
+            },
+          },
+          {
+            name: 'awesome_copilot_get_integration_status',
+            description: 'Get the status of awesome-copilot integration',
+            inputSchema: { type: 'object', properties: {} },
+          },
+          // Reliability tools
+          {
+            name: 'reliability_get_metrics',
+            description: 'Get comprehensive reliability metrics and performance statistics',
+            inputSchema: { type: 'object', properties: {} },
+          },
+          {
+            name: 'reliability_health_check',
+            description: 'Perform a health check on the chaining server',
+            inputSchema: { type: 'object', properties: {} },
+          },
+          {
+            name: 'reliability_reset_metrics',
+            description: 'Reset reliability metrics (useful for testing or after configuration changes)',
+            inputSchema: { type: 'object', properties: {} },
+          },
+          {
+            name: 'reliability_configure_retry',
+            description: 'Configure retry behavior for tool execution',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                maxRetries: {
+                  type: 'number',
+                  description: 'Maximum number of retry attempts',
+                  minimum: 0,
+                  maximum: 10,
+                },
+                backoffMultiplier: {
+                  type: 'number',
+                  description: 'Exponential backoff multiplier',
+                  minimum: 1,
+                  maximum: 5,
+                },
+                initialDelay: {
+                  type: 'number',
+                  description: 'Initial delay in milliseconds',
+                  minimum: 100,
+                  maximum: 10000,
+                },
+                maxDelay: {
+                  type: 'number',
+                  description: 'Maximum delay in milliseconds',
+                  minimum: 1000,
+                  maximum: 120000,
+                },
+              },
+            },
+          },
         ],
       };
     });
@@ -310,6 +379,38 @@ Key features:
             uri: 'chaining://prompts/overview',
             name: 'Prompts Overview',
             description: 'Overview of available prompts by category and complexity',
+            mimeType: 'application/json',
+          },
+          // Awesome Copilot resources
+          {
+            uri: 'chaining://awesome-copilot/collections',
+            name: 'Awesome Copilot Collections',
+            description: 'Collections of development resources from awesome-copilot',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'chaining://awesome-copilot/instructions',
+            name: 'Awesome Copilot Instructions',
+            description: 'Development instructions and guides from awesome-copilot',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'chaining://awesome-copilot/status',
+            name: 'Awesome Copilot Integration Status',
+            description: 'Status and statistics of awesome-copilot integration',
+            mimeType: 'application/json',
+          },
+          // Reliability resources
+          {
+            uri: 'chaining://reliability/metrics',
+            name: 'Reliability Metrics',
+            description: 'Performance and reliability statistics for the chaining server',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'chaining://reliability/health',
+            name: 'System Health Check',
+            description: 'Current health status of the chaining server',
             mimeType: 'application/json',
           },
         ],
@@ -425,6 +526,91 @@ Key features:
             ],
           };
 
+        case 'chaining://awesome-copilot/collections':
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  collections: this.awesomeCopilotIntegration.getCollections().map(collection => ({
+                    id: collection.id,
+                    name: collection.name,
+                    description: collection.description,
+                    tags: collection.tags,
+                    itemCount: collection.items.length,
+                  })),
+                  total: this.awesomeCopilotIntegration.getCollections().length,
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
+        case 'chaining://awesome-copilot/instructions':
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  instructions: this.awesomeCopilotIntegration.getInstructions().map(instruction => ({
+                    mode: instruction.mode,
+                    filename: instruction.filename,
+                    title: instruction.metadata?.title || instruction.filename,
+                    description: instruction.metadata?.description || '',
+                    tags: instruction.metadata?.tags || [],
+                    category: instruction.metadata?.category,
+                  })),
+                  total: this.awesomeCopilotIntegration.getInstructions().length,
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
+        case 'chaining://awesome-copilot/status':
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  ...this.awesomeCopilotIntegration.getStatus(),
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
+        case 'chaining://reliability/metrics':
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  ...this.reliabilityManager.getMetrics(),
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
+        case 'chaining://reliability/health':
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  ...this.reliabilityManager.healthCheck(),
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
         default:
           throw new Error(`Unknown resource: ${uri}`);
       }
@@ -454,33 +640,6 @@ Key features:
           case 'get_tool_chain_analysis':
             return await this.handleToolChainAnalysis(args);
 
-          // Memory/Knowledge Graph tools
-          case 'create_entities':
-            return await this.handleCreateEntities(args);
-
-          case 'create_relations':
-            return await this.handleCreateRelations(args);
-
-          case 'add_observations':
-            return await this.handleAddObservations(args);
-
-          case 'delete_entities':
-            return await this.handleDeleteEntities(args);
-
-          case 'delete_observations':
-            return await this.handleDeleteObservations(args);
-
-          case 'delete_relations':
-            return await this.handleDeleteRelations(args);
-
-          case 'read_graph':
-            return await this.handleReadGraph();
-
-          case 'search_nodes':
-            return await this.handleSearchNodes(args);
-
-          case 'open_nodes':
-            return await this.handleOpenNodes(args);
 
           // Sequential Thinking tool
           case 'sequentialthinking':
@@ -506,6 +665,38 @@ Key features:
           case 'search_resource_sets':
             return await this.handleSearchResourceSets(args);
 
+          // Awesome Copilot tools
+          case 'awesome_copilot_list_collections':
+            return await this.handleAwesomeCopilotListCollections();
+
+          case 'awesome_copilot_search_collections':
+            return await this.handleAwesomeCopilotSearchCollections(args);
+
+          case 'awesome_copilot_get_collection':
+            return await this.handleAwesomeCopilotGetCollection(args);
+
+          case 'awesome_copilot_search_instructions':
+            return await this.handleAwesomeCopilotSearchInstructions(args);
+
+          case 'awesome_copilot_load_instruction':
+            return await this.handleAwesomeCopilotLoadInstruction(args);
+
+          case 'awesome_copilot_get_integration_status':
+            return await this.handleAwesomeCopilotGetIntegrationStatus();
+
+          // Reliability tools
+          case 'reliability_get_metrics':
+            return await this.handleReliabilityGetMetrics();
+
+          case 'reliability_health_check':
+            return await this.handleReliabilityHealthCheck();
+
+          case 'reliability_reset_metrics':
+            return await this.handleReliabilityResetMetrics();
+
+          case 'reliability_configure_retry':
+            return await this.handleReliabilityConfigureRetry(args);
+
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -527,24 +718,10 @@ Key features:
   }
 
   /**
-   * Format error messages with detailed information
+   * Format error messages with enhanced information and suggestions
    */
   private formatErrorMessage(error: unknown, toolName: string, args: any): string {
-    const timestamp = new Date().toISOString();
-    const errorType = error instanceof Error ? error.constructor.name : 'UnknownError';
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    
-    let details = '';
-    if (error instanceof Error && error.stack) {
-      details = `\nStack trace: ${error.stack}`;
-    }
-    
-    return `[${timestamp}] Tool Error: ${toolName}
-Error Type: ${errorType}
-Message: ${errorMessage}
-Arguments: ${JSON.stringify(args, null, 2)}${details}
-
-Please check the tool parameters and try again.`;
+    return this.reliabilityManager.formatEnhancedError(error, toolName, args);
   }
 
   /**
@@ -890,233 +1067,7 @@ Please check the tool parameters and try again.`;
     return Array.from(categories);
   }
 
-  /**
-   * Handle create entities request with robust validation and error handling
-   */
-  private async handleCreateEntities(args: any) {
-    try {
-      const validatedArgs = CreateEntitiesSchema.parse(args);
-      
-      // Additional validation
-      if (!validatedArgs.entities || !Array.isArray(validatedArgs.entities)) {
-        throw new Error('Entities must be provided as an array');
-      }
-      
-      if (validatedArgs.entities.length === 0) {
-        throw new Error('At least one entity must be provided');
-      }
-      
-      if (validatedArgs.entities.length > 100) {
-        throw new Error('Too many entities (maximum 100 per request)');
-      }
-      
-      // Validate and sanitize each entity
-      const sanitizedEntities = validatedArgs.entities.map((entity, index) => {
-        if (!entity.name || typeof entity.name !== 'string') {
-          throw new Error(`Entity ${index + 1}: name is required and must be a string`);
-        }
-        
-        if (!entity.entityType || typeof entity.entityType !== 'string') {
-          throw new Error(`Entity ${index + 1}: entityType is required and must be a string`);
-        }
-        
-        if (!entity.observations || !Array.isArray(entity.observations)) {
-          throw new Error(`Entity ${index + 1}: observations must be provided as an array`);
-        }
-        
-        const sanitizedName = entity.name.trim();
-        const sanitizedType = entity.entityType.trim();
-        
-        if (sanitizedName.length === 0) {
-          throw new Error(`Entity ${index + 1}: name cannot be empty`);
-        }
-        
-        if (sanitizedType.length === 0) {
-          throw new Error(`Entity ${index + 1}: entityType cannot be empty`);
-        }
-        
-        if (sanitizedName.length > 200) {
-          throw new Error(`Entity ${index + 1}: name is too long (maximum 200 characters)`);
-        }
-        
-        if (sanitizedType.length > 100) {
-          throw new Error(`Entity ${index + 1}: entityType is too long (maximum 100 characters)`);
-        }
-        
-        const sanitizedObservations = entity.observations
-          .filter(obs => typeof obs === 'string' && obs.trim().length > 0)
-          .map(obs => obs.trim())
-          .slice(0, 50); // Limit to 50 observations per entity
-        
-        if (sanitizedObservations.length === 0) {
-          throw new Error(`Entity ${index + 1}: at least one valid observation is required`);
-        }
-        
-        return {
-          name: sanitizedName,
-          entityType: sanitizedType,
-          observations: sanitizedObservations,
-        };
-      });
-      
-      console.log(`Creating ${sanitizedEntities.length} entities in knowledge graph`);
-      
-      const result = await this.memoryManager.createEntities(sanitizedEntities);
-      
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify({
-              ...result,
-              timestamp: new Date().toISOString(),
-              entitiesCreated: sanitizedEntities.length,
-            }, null, 2),
-          },
-        ],
-      };
-    } catch (error) {
-      if (error instanceof Error && error.name === 'ZodError') {
-        throw new Error(`Invalid entity parameters: ${error.message}. Please check your input format.`);
-      }
-      throw new Error(`Failed to create entities: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
 
-  /**
-   * Handle create relations request
-   */
-  private async handleCreateRelations(args: any) {
-    const validatedArgs = CreateRelationsSchema.parse(args);
-    const result = await this.memoryManager.createRelations(validatedArgs.relations);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
-    };
-  }
-
-  /**
-   * Handle add observations request
-   */
-  private async handleAddObservations(args: any) {
-    const validatedArgs = AddObservationsSchema.parse(args);
-    const result = await this.memoryManager.addObservations(validatedArgs.observations);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
-    };
-  }
-
-  /**
-   * Handle delete entities request
-   */
-  private async handleDeleteEntities(args: any) {
-    const validatedArgs = DeleteEntitiesSchema.parse(args);
-    await this.memoryManager.deleteEntities(validatedArgs.entityNames);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: 'Entities deleted successfully',
-        },
-      ],
-    };
-  }
-
-  /**
-   * Handle delete observations request
-   */
-  private async handleDeleteObservations(args: any) {
-    const validatedArgs = DeleteObservationsSchema.parse(args);
-    await this.memoryManager.deleteObservations(validatedArgs.deletions);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: 'Observations deleted successfully',
-        },
-      ],
-    };
-  }
-
-  /**
-   * Handle delete relations request
-   */
-  private async handleDeleteRelations(args: any) {
-    const validatedArgs = DeleteRelationsSchema.parse(args);
-    await this.memoryManager.deleteRelations(validatedArgs.relations);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: 'Relations deleted successfully',
-        },
-      ],
-    };
-  }
-
-  /**
-   * Handle read graph request
-   */
-  private async handleReadGraph() {
-    const result = await this.memoryManager.readGraph();
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
-    };
-  }
-
-  /**
-   * Handle search nodes request
-   */
-  private async handleSearchNodes(args: any) {
-    const validatedArgs = SearchNodesSchema.parse(args);
-    const result = await this.memoryManager.searchNodes(validatedArgs.query);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
-    };
-  }
-
-  /**
-   * Handle open nodes request
-   */
-  private async handleOpenNodes(args: any) {
-    const validatedArgs = OpenNodesSchema.parse(args);
-    const result = await this.memoryManager.openNodes(validatedArgs.names);
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
-    };
-  }
 
   /**
    * Handle sequential thinking request with robust validation and error handling
@@ -1402,6 +1353,341 @@ Please check the tool parameters and try again.`;
         },
       ],
     };
+  }
+
+  /**
+   * Handle awesome copilot list collections request
+   */
+  private async handleAwesomeCopilotListCollections() {
+    try {
+      const collections = this.awesomeCopilotIntegration.getCollections();
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              collections: collections.map(collection => ({
+                id: collection.id,
+                name: collection.name,
+                description: collection.description,
+                tags: collection.tags,
+                itemCount: collection.items.length,
+                items: collection.items.map(item => ({
+                  path: item.path,
+                  kind: item.kind,
+                })),
+              })),
+              total: collections.length,
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to list awesome-copilot collections: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle awesome copilot search collections request
+   */
+  private async handleAwesomeCopilotSearchCollections(args: any) {
+    try {
+      const { query } = args;
+
+      if (!query || typeof query !== 'string') {
+        throw new Error('Search query is required and must be a string');
+      }
+
+      const collections = this.awesomeCopilotIntegration.searchCollections(query.trim());
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              query: query.trim(),
+              results: collections.map(collection => ({
+                id: collection.id,
+                name: collection.name,
+                description: collection.description,
+                tags: collection.tags,
+                itemCount: collection.items.length,
+              })),
+              total: collections.length,
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to search awesome-copilot collections: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle awesome copilot get collection request
+   */
+  private async handleAwesomeCopilotGetCollection(args: any) {
+    try {
+      const { id } = args;
+
+      if (!id || typeof id !== 'string') {
+        throw new Error('Collection ID is required and must be a string');
+      }
+
+      const collection = this.awesomeCopilotIntegration.getCollection(id.trim());
+
+      if (!collection) {
+        throw new Error(`Collection with ID '${id}' not found`);
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              collection: {
+                id: collection.id,
+                name: collection.name,
+                description: collection.description,
+                tags: collection.tags,
+                items: collection.items.map(item => ({
+                  path: item.path,
+                  kind: item.kind,
+                })),
+              },
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to get awesome-copilot collection: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle awesome copilot search instructions request
+   */
+  private async handleAwesomeCopilotSearchInstructions(args: any) {
+    try {
+      const { keywords } = args;
+
+      if (!keywords || typeof keywords !== 'string') {
+        throw new Error('Keywords are required and must be a string');
+      }
+
+      const results = this.awesomeCopilotIntegration.searchInstructions(keywords.trim());
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              keywords: keywords.trim(),
+              results: results.map(result => ({
+                filename: result.filename,
+                title: result.title,
+                description: result.description,
+                tags: result.tags,
+                category: result.category,
+              })),
+              total: results.length,
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to search awesome-copilot instructions: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle awesome copilot load instruction request
+   */
+  private async handleAwesomeCopilotLoadInstruction(args: any) {
+    try {
+      const { mode, filename } = args;
+
+      if (!mode || typeof mode !== 'string') {
+        throw new Error('Mode is required and must be a string');
+      }
+
+      if (!filename || typeof filename !== 'string') {
+        throw new Error('Filename is required and must be a string');
+      }
+
+      const instruction = this.awesomeCopilotIntegration.getInstruction(mode.trim(), filename.trim());
+
+      if (!instruction) {
+        throw new Error(`Instruction '${filename}' in mode '${mode}' not found`);
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              instruction: {
+                mode: instruction.mode,
+                filename: instruction.filename,
+                content: instruction.content,
+                metadata: instruction.metadata,
+              },
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to load awesome-copilot instruction: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle awesome copilot get integration status request
+   */
+  private async handleAwesomeCopilotGetIntegrationStatus() {
+    try {
+      const status = this.awesomeCopilotIntegration.getStatus();
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              ...status,
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to get awesome-copilot integration status: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle reliability get metrics request
+   */
+  private async handleReliabilityGetMetrics() {
+    try {
+      const metrics = this.reliabilityManager.getMetrics();
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              ...metrics,
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to get reliability metrics: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle reliability health check request
+   */
+  private async handleReliabilityHealthCheck() {
+    try {
+      const health = this.reliabilityManager.healthCheck();
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              ...health,
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to perform health check: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle reliability reset metrics request
+   */
+  private async handleReliabilityResetMetrics() {
+    try {
+      this.reliabilityManager.resetMetrics();
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'Reliability metrics have been reset successfully. This will help improve future performance analysis.',
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to reset reliability metrics: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle reliability configure retry request
+   */
+  private async handleReliabilityConfigureRetry(args: any) {
+    try {
+      const { maxRetries, backoffMultiplier, initialDelay, maxDelay } = args;
+
+      // Validate inputs
+      if (maxRetries !== undefined && (maxRetries < 0 || maxRetries > 10)) {
+        throw new Error('maxRetries must be between 0 and 10');
+      }
+
+      if (backoffMultiplier !== undefined && (backoffMultiplier < 1 || backoffMultiplier > 5)) {
+        throw new Error('backoffMultiplier must be between 1 and 5');
+      }
+
+      if (initialDelay !== undefined && (initialDelay < 100 || initialDelay > 10000)) {
+        throw new Error('initialDelay must be between 100 and 10000 milliseconds');
+      }
+
+      if (maxDelay !== undefined && (maxDelay < 1000 || maxDelay > 120000)) {
+        throw new Error('maxDelay must be between 1000 and 120000 milliseconds');
+      }
+
+      // Configure retry behavior
+      this.reliabilityManager.setRetryConfig({
+        maxRetries,
+        backoffMultiplier,
+        initialDelay,
+        maxDelay,
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              message: 'Retry configuration updated successfully',
+              newConfig: {
+                maxRetries: maxRetries ?? 3,
+                backoffMultiplier: backoffMultiplier ?? 2,
+                initialDelay: initialDelay ?? 1000,
+                maxDelay: maxDelay ?? 30000,
+              },
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Failed to configure retry behavior: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**
