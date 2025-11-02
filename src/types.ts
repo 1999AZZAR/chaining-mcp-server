@@ -162,6 +162,53 @@ export const SequentialThinkingSchema = z.object({
   needsMoreThoughts: z.boolean().optional().describe('If more thoughts are needed'),
 });
 
+// Brainstorming Schemas
+export const BrainstormingSchema = z.object({
+  topic: z.string().describe('The topic or problem to brainstorm about'),
+  context: z.string().optional().describe('Additional context or background information'),
+  approach: z.enum(['creative', 'analytical', 'practical', 'innovative']).default('creative').describe('The brainstorming approach to use'),
+  ideaCount: z.number().min(3).max(20).default(10).describe('Number of ideas to generate'),
+  includeEvaluation: z.boolean().default(true).describe('Whether to include evaluation and prioritization of ideas'),
+  constraints: z.array(z.string()).optional().describe('Constraints or requirements to consider'),
+});
+
+// Sequential Resource Schemas
+export const SequentialStateSchema = z.object({
+  currentThought: z.number().optional(),
+  totalThoughts: z.number().optional(),
+  thoughts: z.array(z.object({
+    thoughtNumber: z.number(),
+    content: z.string(),
+    timestamp: z.string(),
+    isRevision: z.boolean().optional(),
+    branchId: z.string().optional(),
+  })).optional(),
+  lastUpdated: z.string(),
+  activeSession: z.boolean(),
+});
+
+// Workflow Orchestrator Schemas
+export const WorkflowStepSchema = z.object({
+  id: z.string().describe('Unique identifier for this step'),
+  serverName: z.string().describe('Name of the MCP server to execute on'),
+  toolName: z.string().describe('Name of the tool to execute'),
+  parameters: z.record(z.any()).describe('Parameters to pass to the tool'),
+  dependsOn: z.array(z.string()).optional().describe('IDs of steps that must complete before this step'),
+  outputMapping: z.record(z.string()).optional().describe('Map outputs from this step to input parameters for dependent steps'),
+  retryOnFailure: z.boolean().optional().describe('Whether to retry this step on failure'),
+  maxRetries: z.number().optional().describe('Maximum number of retries'),
+});
+
+export const WorkflowOrchestratorSchema = z.object({
+  workflowId: z.string().describe('Unique identifier for the workflow'),
+  name: z.string().describe('Human-readable name for the workflow'),
+  description: z.string().optional().describe('Description of what this workflow does'),
+  steps: z.array(WorkflowStepSchema).describe('Array of workflow steps to execute'),
+  failFast: z.boolean().optional().describe('Whether to stop execution on first failure'),
+  timeout: z.number().optional().describe('Maximum execution time in milliseconds'),
+  variables: z.record(z.any()).optional().describe('Global variables available to all steps'),
+});
+
 // Time Schemas
 export const GetCurrentTimeSchema = z.object({
   timezone: z.string().describe('IANA timezone name (e.g., America/New_York, Europe/London)'),
@@ -200,6 +247,16 @@ export type OpenNodesInput = z.infer<typeof OpenNodesSchema>;
 
 // Sequential thinking types
 export type SequentialThinkingInput = z.infer<typeof SequentialThinkingSchema>;
+
+// Brainstorming types
+export type BrainstormingInput = z.infer<typeof BrainstormingSchema>;
+
+// Sequential resource types
+export type SequentialState = z.infer<typeof SequentialStateSchema>;
+
+// Workflow orchestrator types
+export type WorkflowStep = z.infer<typeof WorkflowStepSchema>;
+export type WorkflowOrchestratorInput = z.infer<typeof WorkflowOrchestratorSchema>;
 
 // Time types
 export type GetCurrentTimeInput = z.infer<typeof GetCurrentTimeSchema>;

@@ -15,6 +15,8 @@ import { SequentialThinkingManager } from './sequential-thinking-manager.js';
 import { TimeManager } from './time-manager.js';
 import { PromptManager } from './prompt-manager.js';
 import { AwesomeCopilotIntegration } from './awesome-copilot-integration.js';
+import { BrainstormingManager } from './brainstorming-manager.js';
+import { WorkflowOrchestrator } from './workflow-orchestrator.js';
 import {
   OptimizationCriteriaSchema,
   SequentialThinkingRequestSchema,
@@ -25,6 +27,8 @@ import {
   AnalyzeWithSequentialThinkingSchema,
   GetToolChainAnalysisSchema,
   SequentialThinkingSchema,
+  BrainstormingSchema,
+  WorkflowOrchestratorSchema,
   GetCurrentTimeSchema,
   ConvertTimeSchema,
 } from './types.js';
@@ -39,6 +43,8 @@ export class ChainingMCPServer {
   private timeManager: TimeManager;
   private promptManager: PromptManager;
   private awesomeCopilotIntegration: AwesomeCopilotIntegration;
+  private brainstormingManager: BrainstormingManager;
+  private workflowOrchestrator: WorkflowOrchestrator;
   private isInitialized: boolean = false;
 
   constructor() {
@@ -62,6 +68,8 @@ export class ChainingMCPServer {
     this.timeManager = new TimeManager();
     this.promptManager = new PromptManager();
     this.awesomeCopilotIntegration = new AwesomeCopilotIntegration();
+    this.brainstormingManager = new BrainstormingManager();
+    this.workflowOrchestrator = new WorkflowOrchestrator();
 
     this.setupHandlers();
   }
@@ -127,6 +135,48 @@ Key features:
 - Repeats the process until satisfied
 - Provides a correct answer`,
             inputSchema: getToolInputSchema(SequentialThinkingSchema),
+          },
+          // Brainstorming tool
+          {
+            name: 'brainstorming',
+            description: `Generate creative ideas and solutions for problems using different brainstorming approaches.
+This tool helps generate innovative ideas, evaluate their feasibility, and provide structured recommendations.
+
+Approaches available:
+- creative: Generate innovative and unconventional ideas
+- analytical: Data-driven and logical solution generation
+- practical: Realistic and implementable solutions
+- innovative: Cutting-edge approaches combining multiple perspectives
+
+Features:
+- Multiple brainstorming approaches (creative, analytical, practical, innovative)
+- Idea evaluation with feasibility, innovation, and effort metrics
+- Constraint-aware idea generation
+- Pros and cons analysis for each idea
+- Top idea recommendations with evaluation criteria`,
+            inputSchema: getToolInputSchema(BrainstormingSchema),
+          },
+          // Workflow Orchestrator tool
+          {
+            name: 'workflow_orchestrator',
+            description: `Execute complex multi-server workflows across the MCP ecosystem with dependency management and error handling.
+This tool orchestrates the execution of multiple tools across different MCP servers in a coordinated manner.
+
+Key Features:
+- Multi-server workflow execution with dependency management
+- Automatic parameter passing between workflow steps
+- Error handling and retry logic
+- Progress tracking and status monitoring
+- Timeout and cancellation support
+- Global variable management across steps
+
+Use Cases:
+- Complex data processing pipelines across multiple services
+- Automated research workflows combining search, analysis, and reporting
+- Multi-step project management processes
+- Cross-platform data synchronization
+- Automated testing and deployment pipelines`,
+            inputSchema: getToolInputSchema(WorkflowOrchestratorSchema),
           },
           // Time tools
           {
@@ -348,6 +398,20 @@ Key features:
             description: 'Status and statistics of awesome-copilot integration',
             mimeType: 'application/json',
           },
+          // Sequential thinking state resource
+          {
+            uri: 'chaining://sequential/state',
+            name: 'Sequential Thinking State',
+            description: 'Current state of sequential thinking sessions and thought history',
+            mimeType: 'application/json',
+          },
+          // Workflow orchestrator status resource
+          {
+            uri: 'chaining://workflows/status',
+            name: 'Workflow Orchestrator Status',
+            description: 'Status of active and completed workflow orchestrations',
+            mimeType: 'application/json',
+          },
         ],
       };
     });
@@ -518,6 +582,51 @@ Key features:
             ],
           };
 
+        case 'chaining://sequential/state':
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  currentThought: null,
+                  totalThoughts: null,
+                  thoughts: [],
+                  lastUpdated: new Date().toISOString(),
+                  activeSession: false,
+                  message: 'Sequential thinking state tracking not yet implemented',
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
+        case 'chaining://workflows/status':
+          const activeWorkflows = this.workflowOrchestrator.getActiveWorkflows();
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  activeWorkflows: activeWorkflows.map(workflowId => {
+                    const status = this.workflowOrchestrator.getWorkflowStatus(workflowId);
+                    return status ? {
+                      workflowId: status.workflowId,
+                      status: status.status,
+                      stepsCompleted: status.steps.filter(s => s.status === 'completed').length,
+                      stepsTotal: status.steps.length,
+                      executionTime: status.executionTime,
+                      startedAt: status.startedAt,
+                    } : null;
+                  }).filter(Boolean),
+                  totalActiveWorkflows: activeWorkflows.length,
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
         default:
           throw new Error(`Unknown resource: ${uri}`);
       }
@@ -551,6 +660,14 @@ Key features:
           // Sequential Thinking tool
           case 'sequentialthinking':
             return await this.handleSequentialThinking(args);
+
+          // Brainstorming tool
+          case 'brainstorming':
+            return await this.handleBrainstorming(args);
+
+          // Workflow Orchestrator tool
+          case 'workflow_orchestrator':
+            return await this.handleWorkflowOrchestrator(args);
 
           // Time tools
           case 'get_current_time':
@@ -971,49 +1088,161 @@ Key features:
     try {
       // Validate and sanitize input
       const validatedArgs = SequentialThinkingSchema.parse(args);
-      
+
       // Additional validation for thought content
       if (!validatedArgs.thought || typeof validatedArgs.thought !== 'string') {
         throw new Error('Thought content is required and must be a string');
       }
-      
+
       if (validatedArgs.thought.trim().length === 0) {
         throw new Error('Thought content cannot be empty');
       }
-      
+
       if (validatedArgs.thought.length > 10000) {
         throw new Error('Thought content is too long (maximum 10,000 characters)');
       }
-      
+
       // Validate thought numbers
       if (validatedArgs.thoughtNumber < 1) {
         throw new Error('Thought number must be at least 1');
       }
-      
+
       if (validatedArgs.totalThoughts < 1) {
         throw new Error('Total thoughts must be at least 1');
       }
-      
+
       if (validatedArgs.thoughtNumber > validatedArgs.totalThoughts) {
         throw new Error('Current thought number cannot exceed total thoughts');
       }
-      
+
       // Sanitize thought content
       const sanitizedArgs = {
         ...validatedArgs,
         thought: validatedArgs.thought.trim(),
       };
-      
+
       console.log(`Processing sequential thought ${sanitizedArgs.thoughtNumber}/${sanitizedArgs.totalThoughts}`);
-      
+
       const result = this.sequentialThinkingManager.processThought(sanitizedArgs);
-      
+
       return result;
     } catch (error) {
       if (error instanceof Error && error.name === 'ZodError') {
         throw new Error(`Invalid sequential thinking parameters: ${error.message}. Please check your input format.`);
       }
       throw new Error(`Sequential thinking failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle brainstorming request with robust validation and error handling
+   */
+  private async handleBrainstorming(args: any) {
+    try {
+      // Validate input
+      const validatedArgs = BrainstormingSchema.parse(args);
+
+      // Additional validation
+      if (!validatedArgs.topic || typeof validatedArgs.topic !== 'string') {
+        throw new Error('Topic is required and must be a string');
+      }
+
+      if (validatedArgs.topic.trim().length === 0) {
+        throw new Error('Topic cannot be empty');
+      }
+
+      if (validatedArgs.topic.length > 500) {
+        throw new Error('Topic is too long (maximum 500 characters)');
+      }
+
+      // Validate constraints if provided
+      if (validatedArgs.constraints) {
+        validatedArgs.constraints.forEach((constraint, index) => {
+          if (typeof constraint !== 'string') {
+            throw new Error(`Constraint at index ${index} must be a string`);
+          }
+          if (constraint.length > 200) {
+            throw new Error(`Constraint at index ${index} is too long (maximum 200 characters)`);
+          }
+        });
+      }
+
+      console.log(`Generating ${validatedArgs.ideaCount} ideas for topic: ${validatedArgs.topic} using ${validatedArgs.approach} approach`);
+
+      const result = await this.brainstormingManager.generateIdeas(validatedArgs);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              ...result,
+              request: validatedArgs,
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        throw new Error(`Invalid brainstorming parameters: ${error.message}. Please check your input format.`);
+      }
+      throw new Error(`Brainstorming failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle workflow orchestrator request with robust validation and error handling
+   */
+  private async handleWorkflowOrchestrator(args: any) {
+    try {
+      // Validate input
+      const validatedArgs = WorkflowOrchestratorSchema.parse(args);
+
+      console.log(`Executing workflow: ${validatedArgs.name} (${validatedArgs.workflowId}) with ${validatedArgs.steps.length} steps`);
+
+      // Validate that all referenced servers exist (if we're initialized)
+      if (this.isInitialized) {
+        const availableServers = this.discovery.getServers().map(s => s.name);
+        const missingServers = validatedArgs.steps
+          .map(step => step.serverName)
+          .filter(serverName => !availableServers.includes(serverName));
+
+        if (missingServers.length > 0) {
+          throw new Error(`Workflow references unknown MCP servers: ${missingServers.join(', ')}. Available servers: ${availableServers.join(', ')}`);
+        }
+
+        // Validate that all tools exist on their respective servers
+        for (const step of validatedArgs.steps) {
+          const server = this.discovery.getServers().find(s => s.name === step.serverName);
+          if (server) {
+            const serverTools = this.discovery.getTools().filter(t => t.serverName === step.serverName);
+            const toolExists = serverTools.some(t => t.name === step.toolName);
+            if (!toolExists) {
+              throw new Error(`Tool '${step.toolName}' not found on server '${step.serverName}'. Available tools: ${serverTools.map(t => t.name).join(', ')}`);
+            }
+          }
+        }
+      }
+
+      // Execute the workflow
+      const result = await this.workflowOrchestrator.executeWorkflow(validatedArgs);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              ...result,
+              workflowDefinition: validatedArgs,
+            }, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        throw new Error(`Invalid workflow orchestrator parameters: ${error.message}. Please check your workflow definition format.`);
+      }
+      throw new Error(`Workflow orchestration failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

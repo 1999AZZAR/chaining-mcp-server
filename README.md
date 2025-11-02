@@ -20,6 +20,9 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Sequential Thinking**: Dynamic problem-solving through structured thinking process
 - **Thought Branching**: Support for alternative reasoning paths and revisions
 - **Context Preservation**: Maintains thinking context across multiple steps
+- **Brainstorming**: Generate creative ideas using multiple approaches (creative, analytical, practical, innovative)
+- **Idea Evaluation**: Automatic evaluation and prioritization of generated ideas
+- **Workflow Orchestration**: Execute complex multi-server workflows with dependency management
 
 ### Time Management
 - **Timezone Support**: Get current time in any IANA timezone
@@ -393,6 +396,55 @@ A detailed tool for dynamic and reflective problem-solving through thoughts.
 
 **Output**: JSON object with thought processing results and metadata.
 
+#### 13. `brainstorming`
+Generate creative ideas and solutions for problems using different brainstorming approaches.
+
+**Input**:
+- `topic` (required): The topic or problem to brainstorm about
+- `context` (optional): Additional context or background information
+- `approach` (optional): The brainstorming approach ('creative', 'analytical', 'practical', 'innovative') - defaults to 'creative'
+- `ideaCount` (optional): Number of ideas to generate (3-20) - defaults to 10
+- `includeEvaluation` (optional): Whether to include evaluation and prioritization - defaults to true
+- `constraints` (optional): Array of constraints or requirements to consider
+
+**Output**: JSON object containing generated ideas with feasibility, innovation, and effort metrics, plus evaluation and recommendations.
+
+**Approaches**:
+- `creative`: Generate innovative and unconventional ideas
+- `analytical`: Data-driven and logical solution generation
+- `practical`: Realistic and implementable solutions
+- `innovative`: Cutting-edge approaches combining multiple perspectives
+
+#### 14. `workflow_orchestrator`
+Execute complex multi-server workflows across the MCP ecosystem with dependency management and error handling.
+
+**Input**:
+- `workflowId` (required): Unique identifier for the workflow
+- `name` (required): Human-readable name for the workflow
+- `description` (optional): Description of what this workflow does
+- `steps` (required): Array of workflow steps to execute
+  - `id`: Unique identifier for this step
+  - `serverName`: Name of the MCP server to execute on
+  - `toolName`: Name of the tool to execute
+  - `parameters`: Parameters to pass to the tool
+  - `dependsOn` (optional): IDs of steps that must complete before this step
+  - `outputMapping` (optional): Map outputs from this step to input parameters for dependent steps
+  - `retryOnFailure` (optional): Whether to retry this step on failure
+  - `maxRetries` (optional): Maximum number of retries
+- `failFast` (optional): Whether to stop execution on first failure
+- `timeout` (optional): Maximum execution time in milliseconds
+- `variables` (optional): Global variables available to all steps
+
+**Output**: JSON object containing workflow execution results, step-by-step status, execution time, and aggregated results.
+
+**Key Features**:
+- **Dependency Management**: Automatic handling of step dependencies and execution order
+- **Parameter Passing**: Automatic passing of outputs from one step as inputs to dependent steps
+- **Error Handling**: Configurable retry logic and failure handling strategies
+- **Progress Tracking**: Real-time status monitoring of workflow execution
+- **Timeout Support**: Configurable execution timeouts for long-running workflows
+- **State Persistence**: Workflow state tracking and recovery capabilities
+
 ### Time Management Tools
 
 #### 17. `get_current_time`
@@ -477,6 +529,12 @@ Returns a JSON collection of all available awesome-copilot instructions with the
 
 ### `chaining://awesome-copilot/status`
 Returns a JSON object with the current status of awesome-copilot integration.
+
+### `chaining://sequential/state`
+Returns a JSON object with the current state of sequential thinking sessions, including thought history and active session status.
+
+### `chaining://workflows/status`
+Returns a JSON object with the status of active and completed workflow orchestrations, including execution progress and results.
 
 ## Usage Examples
 
@@ -568,6 +626,84 @@ const thought2 = await mcpClient.callTool('sequentialthinking', {
 });
 ```
 
+### Brainstorming
+```javascript
+// Generate creative ideas for a product feature
+const creativeIdeas = await mcpClient.callTool('brainstorming', {
+  topic: 'user onboarding experience',
+  approach: 'creative',
+  ideaCount: 8,
+  constraints: ['must be mobile-friendly', 'budget under $50k']
+});
+
+// Generate practical solutions for a technical problem
+const practicalSolutions = await mcpClient.callTool('brainstorming', {
+  topic: 'database performance optimization',
+  context: 'high-traffic e-commerce platform',
+  approach: 'practical',
+  ideaCount: 6,
+  includeEvaluation: true
+});
+
+// Generate analytical approaches for data analysis
+const analyticalIdeas = await mcpClient.callTool('brainstorming', {
+  topic: 'customer churn prediction',
+  approach: 'analytical',
+  constraints: ['must use existing data', 'prediction accuracy > 85%']
+});
+```
+
+### Workflow Orchestration
+```javascript
+// Execute a multi-server research workflow
+const researchWorkflow = await mcpClient.callTool('workflow_orchestrator', {
+  workflowId: 'research-workflow-001',
+  name: 'AI Technology Research Pipeline',
+  description: 'Comprehensive research on AI technologies using multiple MCP servers',
+  steps: [
+    {
+      id: 'search-trends',
+      serverName: 'google-search-mcp',
+      toolName: 'search_trends',
+      parameters: {
+        topics: ['artificial intelligence', 'machine learning'],
+        timeframe: '6M',
+        includePredictions: true
+      }
+    },
+    {
+      id: 'academic-research',
+      serverName: 'google-search-mcp',
+      toolName: 'academic_search',
+      parameters: {
+        query: 'artificial intelligence trends 2024',
+        maxResults: 5
+      },
+      dependsOn: ['search-trends']
+    },
+    {
+      id: 'content-analysis',
+      serverName: 'google-search-mcp',
+      toolName: 'content_summarizer',
+      parameters: {
+        urls: ['output://academic-research.results'], // Using output mapping
+        maxLength: 500
+      },
+      dependsOn: ['academic-research'],
+      outputMapping: {
+        'urls': 'academic-research.results.urls' // Map output to input
+      }
+    }
+  ],
+  failFast: false,
+  timeout: 300000 // 5 minutes
+});
+
+// Check workflow status
+const workflowStatus = await mcpClient.readResource('chaining://workflows/status');
+console.log('Active workflows:', workflowStatus);
+```
+
 ### Time Management
 ```javascript
 // Get current time in different timezones
@@ -644,6 +780,10 @@ console.log(instructions);
 // Get awesome-copilot integration status
 const status = await mcpClient.readResource('chaining://awesome-copilot/status');
 console.log(status);
+
+// Get sequential thinking state
+const sequentialState = await mcpClient.readResource('chaining://sequential/state');
+console.log(sequentialState);
 ```
 
 ## Environment Variables
