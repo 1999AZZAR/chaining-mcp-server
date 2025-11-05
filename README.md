@@ -43,7 +43,16 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 
 ## Prebuilt Prompts & Resource Sets
 
-The chaining MCP server now includes a comprehensive collection of 27 prebuilt prompts and 5 resource sets designed to help models effectively use the available toolsets for development, debugging, orchestration, and MCP ecosystem workflows. The prompts are organized into specialized categories including MCP ecosystem exploration, cross-server orchestration, time-sensitive operations, intelligent routing, and collaborative development.
+The chaining MCP server now includes a comprehensive collection of **32 prebuilt prompts and 10 resource sets** designed to help models effectively use the available toolsets for development, debugging, orchestration, and MCP ecosystem workflows. The collection now includes extensive **tool-chaining resources** with ready-made chains for common development scenarios.
+
+The prompts are organized into specialized categories including MCP ecosystem exploration, cross-server orchestration, time-sensitive operations, intelligent routing, collaborative development, and **advanced tool chaining**.
+
+**New Tool Chaining Resources:**
+- **5 specialized resource sets** for tool chaining covering project analysis, implementation, debugging, cross-server orchestration, and CI/CD
+- **6 advanced tool-chaining prompts** for complex workflows and enterprise-scale orchestration
+- **Comprehensive chain templates** with step-by-step execution guides
+- **Cross-server workflow patterns** leveraging multiple MCP servers
+- **Production-ready orchestration** chains for enterprise environments
 
 ### Prebuilt Prompts
 
@@ -94,22 +103,6 @@ These prebuilt prompts and resource sets help models:
 
 ## Installation
 
-### Option 1: Docker (Recommended)
-
-1. Clone or download this repository
-2. Build and run with Docker Compose:
-   ```bash
-   docker compose up --build
-   ```
-   
-   Or build and run manually:
-   ```bash
-   docker build -t chaining-mcp-server .
-   docker run -d --name chaining-mcp-server -v ./data:/app/data chaining-mcp-server
-   ```
-
-### Option 2: Local Installation
-
 1. Clone or download this repository
 2. Install dependencies:
    ```bash
@@ -120,132 +113,17 @@ These prebuilt prompts and resource sets help models:
    npm run build
    ```
 
-## Docker Configuration
-
-### Docker Compose (Recommended)
-
-The included `docker compose.yml` provides a complete setup with:
-
-- **Automatic building**: Builds the image from source
-- **Volume mounting**: Persistent data storage in `./data` directory
-- **Health checks**: Monitors container health
-- **Resource limits**: Memory limits for stability
-- **Network isolation**: Dedicated Docker network
-
-To use Docker Compose:
-
-```bash
-# Start the service
-docker compose up -d
-
-# View logs
-docker compose logs -f
-
-# Stop the service
-docker compose down
-
-# Rebuild and restart
-docker compose up --build -d
-```
-
-### Convenience Scripts
-
-Use the included `docker-scripts.sh` for easy management:
-
-```bash
-# Make script executable (first time only)
-chmod +x docker-scripts.sh
-
-# Build the image
-./docker-scripts.sh build
-
-# Start the service
-./docker-scripts.sh start
-
-# View logs
-./docker-scripts.sh logs
-
-# Check status
-./docker-scripts.sh status
-
-# Open shell in container
-./docker-scripts.sh shell
-
-# Stop the service
-./docker-scripts.sh stop
-
-# Restart the service
-./docker-scripts.sh restart
-
-# Clean up everything
-./docker-scripts.sh clean
-
-# Show help
-./docker-scripts.sh help
-```
-
-### Docker Run Commands
-
-For manual Docker deployment:
-
-```bash
-# Build the image
-docker build -t chaining-mcp-server .
-
-# Run with volume for data persistence
-docker run -d \
-  --name chaining-mcp-server \
-  -v $(pwd)/data:/app/data \
-  -e SEQUENTIAL_THINKING_AVAILABLE=true \
-  -e AWESOME_COPILOT_ENABLED=true \
-  -e RELIABILITY_MONITORING_ENABLED=true \
-  chaining-mcp-server
-
-# Run in interactive mode for debugging
-docker run -it --rm \
-  -v $(pwd)/data:/app/data \
-  chaining-mcp-server /bin/bash
-```
-
-### Environment Variables
-
-Configure the container with these environment variables:
-
-- `NODE_ENV`: Set to `production` for optimized performance
-- `SEQUENTIAL_THINKING_AVAILABLE`: Enable sequential thinking features (default: `true`)
-- `AWESOME_COPILOT_ENABLED`: Enable awesome-copilot integration (default: `true`)
-- `RELIABILITY_MONITORING_ENABLED`: Enable reliability monitoring (default: `true`)
-- `DISABLE_THOUGHT_LOGGING`: Disable thought logging (default: `false`)
-
-### Volume Mounts
-
-The Docker setup includes these volume mounts:
-
-- `./data:/app/data`: Persistent storage for server data and configurations
-- `~/.cursor/mcp.json:/home/mcpuser/.cursor/mcp.json:ro`: Read-only access to MCP configuration
-
 ## Configuration
 
 Add the chaining MCP server to your MCP client configuration:
 
-### For Docker deployment:
 ```json
 {
   "mcpServers": {
     "chaining": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-v",
-        "/path/to/chaining-mcp-server/data:/app/data",
-        "-v",
-        "/path/to/.cursor/mcp.json:/home/mcpuser/.cursor/mcp.json:ro",
-        "chaining-mcp-server"
-      ],
+      "command": "node",
+      "args": ["/path/to/chaining-mcp-server/dist/index.js"],
       "env": {
-        "NODE_ENV": "production",
         "SEQUENTIAL_THINKING_AVAILABLE": "true",
         "AWESOME_COPILOT_ENABLED": "true",
         "RELIABILITY_MONITORING_ENABLED": "true"
@@ -255,22 +133,7 @@ Add the chaining MCP server to your MCP client configuration:
 }
 ```
 
-**Note:** Replace `/path/to/` with your actual paths. For example:
-- `/home/azzar/project/MCPservers/chaining-mcp-server/data` for data directory
-- `/home/azzar/.cursor/mcp.json` for MCP configuration
-
-### For local installation:
-```json
-{
-  "mcpServers": {
-    "chaining-mcp": {
-      "command": "node",
-      "args": ["/path/to/chaining-mcp-server/dist/index.js"],
-      "env": {}
-    }
-  }
-}
-```
+**Note:** Replace `/path/to/chaining-mcp-server` with your actual path to the chaining-mcp-server directory.
 
 ## Available Tools
 
@@ -536,6 +399,12 @@ Returns a JSON object with the current state of sequential thinking sessions, in
 ### `chaining://workflows/status`
 Returns a JSON object with the status of active and completed workflow orchestrations, including execution progress and results.
 
+### `chaining://tool-chains`
+Returns a JSON collection of comprehensive tool chaining resources including prompts and resource sets specifically designed for complex development workflows and orchestration patterns.
+
+### `chaining://tool-chains/overview`
+Returns a JSON overview of available tool chaining resources organized by category and complexity level, providing insights into the tool chaining capabilities.
+
 ## Usage Examples
 
 ### Basic Server Discovery
@@ -784,6 +653,14 @@ console.log(status);
 // Get sequential thinking state
 const sequentialState = await mcpClient.readResource('chaining://sequential/state');
 console.log(sequentialState);
+
+// Get comprehensive tool chaining resources
+const toolChains = await mcpClient.readResource('chaining://tool-chains');
+console.log('Available tool chains:', toolChains);
+
+// Get tool chaining overview
+const toolChainsOverview = await mcpClient.readResource('chaining://tool-chains/overview');
+console.log('Tool chaining overview:', toolChainsOverview);
 ```
 
 ## Environment Variables
@@ -794,19 +671,6 @@ console.log(sequentialState);
 - `AWESOME_COPILOT_ENABLED`: Set to 'false' to disable awesome-copilot integration
 
 ## Development
-
-### Docker Development Setup
-
-For development with Docker, use the override file:
-
-```bash
-# Copy the example override file
-cp docker compose.override.yml.example docker compose.override.yml
-
-# Customize the override file as needed
-# Then start with development configuration
-docker compose up --build
-```
 
 ### Project Structure
 ```
@@ -826,14 +690,9 @@ src/
 
 ### Building
 ```bash
-# Local development
 npm run build    # Build TypeScript to JavaScript
 npm run dev      # Watch mode for development
 npm run clean    # Clean dist directory
-
-# Docker development
-./docker-scripts.sh build  # Build Docker image
-./docker-scripts.sh start  # Start with Docker
 ```
 
 ### Testing
@@ -842,43 +701,6 @@ npm run clean    # Clean dist directory
 ```bash
 node dist/index.js
 ```
-
-#### Docker Testing
-```bash
-# Build the image (if network issues, try with --network=host)
-docker build -t chaining-mcp-server .
-
-# Test the container
-docker run --rm -it chaining-mcp-server npm start
-
-# Or use docker-compose
-docker compose up --build
-```
-
-#### Troubleshooting Docker Build Issues
-
-If you encounter network issues during Docker build:
-
-1. **Check Docker connectivity:**
-   ```bash
-   docker pull hello-world
-   ```
-
-2. **Try building with host network:**
-   ```bash
-   docker build --network=host -t chaining-mcp-server .
-   ```
-
-3. **Use a different base image:**
-   ```dockerfile
-   FROM node:18-slim
-   # Instead of node:18-alpine
-   ```
-
-4. **Build without cache:**
-   ```bash
-   docker build --no-cache -t chaining-mcp-server .
-   ```
 
 ## Integration with Other MCP Servers
 

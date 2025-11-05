@@ -412,6 +412,18 @@ Use Cases:
             description: 'Status of active and completed workflow orchestrations',
             mimeType: 'application/json',
           },
+          {
+            uri: 'chaining://tool-chains',
+            name: 'Tool Chaining Resources',
+            description: 'Comprehensive collection of prebuilt tool chains and orchestration patterns for development workflows',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'chaining://tool-chains/overview',
+            name: 'Tool Chaining Overview',
+            description: 'Overview of available tool chaining resources by category and complexity level',
+            mimeType: 'application/json',
+          },
         ],
       };
     });
@@ -621,6 +633,86 @@ Use Cases:
                     } : null;
                   }).filter(Boolean),
                   totalActiveWorkflows: activeWorkflows.length,
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
+        case 'chaining://tool-chains':
+          const toolChainingPrompts = this.promptManager.getPromptsByCategory('tool-chaining');
+          const toolChainingResourceSets = this.promptManager.getResourceSetsByCategory('tool-chaining');
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  prompts: toolChainingPrompts.map(prompt => ({
+                    id: prompt.id,
+                    name: prompt.name,
+                    description: prompt.description,
+                    tags: prompt.tags,
+                    complexity: prompt.complexity,
+                    useCase: prompt.useCase,
+                    expectedTools: prompt.expectedTools,
+                  })),
+                  resourceSets: toolChainingResourceSets.map(set => ({
+                    id: set.id,
+                    name: set.name,
+                    description: set.description,
+                    tags: set.tags,
+                    complexity: set.complexity,
+                    resourceCount: set.resources.length,
+                  })),
+                  totalPrompts: toolChainingPrompts.length,
+                  totalResourceSets: toolChainingResourceSets.length,
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              },
+            ],
+          };
+
+        case 'chaining://tool-chains/overview':
+          const toolChainPrompts = this.promptManager.getPromptsByCategory('tool-chaining');
+          const toolChainResourceSets = this.promptManager.getResourceSetsByCategory('tool-chaining');
+
+          const toolChainPromptCategories = toolChainPrompts.reduce((acc, prompt) => {
+            acc[prompt.category] = (acc[prompt.category] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+
+          const toolChainResourceSetCategories = toolChainResourceSets.reduce((acc, set) => {
+            acc[set.category] = (acc[set.category] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+
+          const toolChainPromptComplexity = toolChainPrompts.reduce((acc, prompt) => {
+            acc[prompt.complexity] = (acc[prompt.complexity] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+
+          const toolChainResourceSetComplexity = toolChainResourceSets.reduce((acc, set) => {
+            acc[set.complexity] = (acc[set.complexity] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  totalPrompts: toolChainPrompts.length,
+                  totalResourceSets: toolChainResourceSets.length,
+                  categories: {
+                    prompts: toolChainPromptCategories,
+                    resourceSets: toolChainResourceSetCategories,
+                  },
+                  complexity: {
+                    prompts: toolChainPromptComplexity,
+                    resourceSets: toolChainResourceSetComplexity,
+                  },
                   timestamp: new Date().toISOString(),
                 }, null, 2),
               },
