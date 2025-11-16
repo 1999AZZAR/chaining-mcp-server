@@ -1,6 +1,6 @@
-# Comprehensive Chaining MCP Server
+# Enterprise Chaining MCP Server
 
-A refined and unified Model Context Protocol (MCP) server that combines intelligent tool chaining, route optimization, sequential thinking, time management, and development guidance capabilities. This server discovers available MCP servers on your system, analyzes their tools, and provides a complete toolkit for complex task execution with awesome-copilot integration.
+A refined and unified Model Context Protocol (MCP) server that combines intelligent tool chaining, route optimization, sequential thinking, time management, development guidance, monitoring, analytics, security, and compliance capabilities. This server discovers available MCP servers on your system, analyzes their tools, validates tool chains, and provides a complete enterprise-grade toolkit for complex task execution with awesome-copilot integration.
 
 ## Features
 
@@ -9,6 +9,8 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Tool Analysis**: Analyzes available tools and their capabilities
 - **Route Optimization**: Generates intelligent suggestions for tool chaining based on optimization criteria
 - **Sequential Thinking Integration**: Works with sequential thinking MCP for complex workflow analysis
+- **Tool Chain Validation**: Validates tool chains for correctness, dependencies, and security issues
+- **Performance Analysis**: Analyzes tool chain performance with optimization recommendations
 
 ### Awesome Copilot Integration
 - **Collections Access**: Browse and search development collections (TypeScript, Python, React, etc.)
@@ -29,6 +31,12 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Time Conversion**: Convert times between different timezones
 - **DST Handling**: Automatic daylight saving time detection
 
+### Enterprise Capabilities
+- **Monitoring & Analytics**: System health monitoring, performance bottleneck analysis, tool usage analytics
+- **Security & Compliance**: Vulnerability assessment, compliance audit workflows, data privacy protection
+- **Tool Chain Verification**: Validate tool chains for correctness, dependencies, and security issues
+- **Performance Optimization**: Analyze and optimize tool chain performance with actionable recommendations
+
 ### Technical Features
 - **Comprehensive Validation**: Uses Zod schemas for robust data validation
 - **Production Ready**: Clean project structure with proper `.gitignore` and build system
@@ -38,21 +46,26 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Enhanced Time Management**: Better timezone handling with proper DST detection
 - **Advanced Sequential Thinking**: Enhanced thought processing with branching and revision support
 - **Awesome Copilot Integration**: Direct access to curated development collections and instructions
-- **27 Prompts & 5 Resource Sets**: Comprehensive collection covering development, orchestration, MCP ecosystem workflows, and development guidance
+- **42 Prompts & 11 Resource Sets**: Comprehensive collection covering development, orchestration, MCP ecosystem workflows, monitoring, analytics, security, and compliance guidance
 - **Intelligent Tool Guidance**: Structured guidance to help models effectively use available toolsets
 
 ## Prebuilt Prompts & Resource Sets
 
-The chaining MCP server now includes a comprehensive collection of **32 prebuilt prompts and 10 resource sets** designed to help models effectively use the available toolsets for development, debugging, orchestration, and MCP ecosystem workflows. The collection now includes extensive **tool-chaining resources** with ready-made chains for common development scenarios.
+The chaining MCP server now includes a comprehensive collection of **42 prebuilt prompts and 11 resource sets** designed to help models effectively use the available toolsets for development, debugging, orchestration, monitoring, analytics, security, and compliance workflows. The collection now includes extensive **tool-chaining resources** with ready-made chains for common development scenarios, plus enterprise-grade monitoring and security resources.
 
 The prompts are organized into specialized categories including MCP ecosystem exploration, cross-server orchestration, time-sensitive operations, intelligent routing, collaborative development, and **advanced tool chaining**.
 
-**New Tool Chaining Resources:**
+**Tool Chaining Resources:**
 - **5 specialized resource sets** for tool chaining covering project analysis, implementation, debugging, cross-server orchestration, and CI/CD
 - **6 advanced tool-chaining prompts** for complex workflows and enterprise-scale orchestration
 - **Comprehensive chain templates** with step-by-step execution guides
 - **Cross-server workflow patterns** leveraging multiple MCP servers
 - **Production-ready orchestration** chains for enterprise environments
+
+**Enterprise Resources:**
+- **5 monitoring & analytics prompts** for system health, performance analysis, and optimization
+- **5 security & compliance prompts** for vulnerability assessment, audit workflows, and incident response
+- **Enterprise-grade resource sets** for observability, reliability, security assessment, and compliance management
 
 ### Prebuilt Prompts
 
@@ -67,6 +80,8 @@ Prebuilt prompts provide structured guidance for specific development tasks:
 - **Collaboration**: Team development orchestration, quality assurance automation
 - **Optimization**: Predictive workflows, intelligent resource discovery
 - **Sequential Thinking**: Complex problem-solving and thought processing workflows
+- **Monitoring & Analytics**: System health monitoring, performance bottleneck analysis, tool usage analytics, workflow reliability assessment, cost optimization
+- **Security & Compliance**: Vulnerability assessment, compliance audit workflows, data privacy protection, access control audit, incident response planning
 
 Each prompt includes:
 - Clear task description and objectives
@@ -83,13 +98,96 @@ Resource sets are curated collections of prompts, workflows, templates, and exam
 - **Debugging Toolbox**: Comprehensive debugging techniques and workflows
 - **Performance Optimization Kit**: Tools for performance analysis and improvement
 - **Tool Chaining Mastery**: Advanced techniques for complex tool orchestration
-- **Awesome Copilot Collections**: Curated collections of development resources and instructions
+- **Awesome Copilot Collections**: Curated collections of development resources
+- **Observability Suite**: Comprehensive monitoring and observability resources for MCP ecosystems
+- **Analytics Toolkit**: Advanced analytics tools and resources for MCP ecosystem optimization
+- **Reliability Engineering Kit**: Resources for building and maintaining reliable MCP server ecosystems
+- **Security Assessment Suite**: Comprehensive security assessment and vulnerability management resources
+- **Compliance Management Suite**: Resources for managing regulatory compliance and governance
+- **Privacy Protection Framework**: Resources for implementing and maintaining data privacy protections
+- **Incident Response Playbook**: Comprehensive incident response resources and procedures
 
 Each resource set contains:
 - Multiple resources (prompts, workflows, templates, examples)
 - Complexity rating
 - Category classification
 - Descriptive tags
+
+### Tool Chain Verification Examples
+
+#### Tool Chain Validation
+```javascript
+// Validate a tool chain for correctness and security
+const validation = await mcpClient.callTool('validate_tool_chain', {
+  toolChain: [
+    {
+      serverName: 'filesystem-mcp',
+      toolName: 'read_file',
+      parameters: { path: 'config.json' }
+    },
+    {
+      serverName: 'filesystem-mcp',
+      toolName: 'search_replace',
+      parameters: { path: 'config.json', old_string: '"debug": false', new_string: '"debug": true' },
+      dependsOn: ['read_file']
+    }
+  ],
+  checkCircularDependencies: true,
+  checkToolAvailability: true,
+  checkParameterCompatibility: true
+});
+console.log(validation);
+```
+
+#### Performance Analysis
+```javascript
+// Analyze tool chain performance and get optimization suggestions
+const analysis = await mcpClient.callTool('analyze_tool_chain_performance', {
+  toolChain: [
+    {
+      serverName: 'filesystem-mcp',
+      toolName: 'list_dir',
+      parameters: { path: 'src' }
+    },
+    {
+      serverName: 'grep-mcp',
+      toolName: 'grep',
+      parameters: { pattern: 'TODO|FIXME', path: 'src' },
+      dependsOn: ['list_dir']
+    }
+  ],
+  includeExecutionMetrics: true,
+  includeComplexityAnalysis: true,
+  includeOptimizationSuggestions: true
+});
+console.log(analysis);
+```
+
+#### Monitoring & Analytics Prompts
+```javascript
+// Use the system health monitoring prompt
+const healthPrompt = await mcpClient.callTool('get_prompt', {
+  id: 'system-health-monitoring'
+});
+
+// Use the performance bottleneck analysis prompt
+const perfPrompt = await mcpClient.callTool('get_prompt', {
+  id: 'performance-bottleneck-analysis'
+});
+```
+
+#### Security & Compliance Prompts
+```javascript
+// Use the security vulnerability assessment prompt
+const securityPrompt = await mcpClient.callTool('get_prompt', {
+  id: 'security-vulnerability-assessment'
+});
+
+// Use the compliance audit workflow prompt
+const compliancePrompt = await mcpClient.callTool('get_prompt', {
+  id: 'compliance-audit-workflow'
+});
+```
 
 ### Benefits for Models
 
@@ -363,6 +461,28 @@ Search for resource sets by keywords, category, or tags.
 - `complexity` (optional): Filter by complexity level (low, medium, high)
 
 **Output**: JSON object with matching resource sets and their metadata.
+
+#### 23. `validate_tool_chain`
+Validate tool chains for correctness, dependencies, and potential issues. Checks for circular dependencies, tool availability, and parameter compatibility.
+
+**Input**:
+- `toolChain` (required): Array of tool chain steps with server name, tool name, parameters, and dependencies
+- `checkCircularDependencies` (optional): Whether to check for circular dependencies (default: true)
+- `checkToolAvailability` (optional): Whether to verify tools exist on their servers (default: true)
+- `checkParameterCompatibility` (optional): Whether to check parameter compatibility (default: true)
+
+**Output**: JSON object with validation results including errors, warnings, and overall validity status.
+
+#### 24. `analyze_tool_chain_performance`
+Analyze performance metrics and efficiency of tool chains. Provides execution time estimates, complexity analysis, and optimization suggestions.
+
+**Input**:
+- `toolChain` (required): Array of tool chain steps to analyze
+- `includeExecutionMetrics` (optional): Whether to include execution time estimates (default: true)
+- `includeComplexityAnalysis` (optional): Whether to analyze complexity metrics (default: true)
+- `includeOptimizationSuggestions` (optional): Whether to provide optimization suggestions (default: true)
+
+**Output**: JSON object with performance metrics, complexity analysis, and optimization recommendations.
 
 ## Available Resources
 
