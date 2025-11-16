@@ -968,6 +968,278 @@ Manage complex enterprise integrations using coordinated MCP server capabilities
 - Comprehensive documentation and knowledge management
 - Regular architecture assessments and updates`,
         expectedTools: ['analyze_tools', 'generate_route_suggestions', 'get_tool_chain_analysis', 'sequentialthinking', 'workflow_orchestrator', 'todo_write']
+      },
+
+      // Monitoring & Analytics Prompts
+      {
+        id: 'system-health-monitoring',
+        name: 'System Health Monitoring',
+        description: 'Comprehensive monitoring of MCP server health and performance metrics',
+        category: 'monitoring',
+        tags: ['monitoring', 'health', 'performance', 'metrics', 'observability'],
+        complexity: 'medium',
+        useCase: 'Monitoring MCP server ecosystem health and identifying performance issues',
+        prompt: `Monitor the health and performance of your MCP server ecosystem:
+
+1. **Server Availability Check**: Verify all configured MCP servers are responding
+2. **Performance Metrics**: Monitor response times, error rates, and throughput
+3. **Resource Usage**: Track memory, CPU, and network utilization
+4. **Error Analysis**: Identify patterns in errors and failures
+5. **Capacity Planning**: Monitor trends to predict scaling needs
+
+**Monitoring Strategy:**
+- Check server discovery and tool analysis regularly
+- Monitor workflow execution times and success rates
+- Track tool usage patterns and performance bottlenecks
+- Set up alerts for critical failures or performance degradation
+- Maintain historical data for trend analysis
+
+Use the available tools to gather comprehensive health data across all MCP servers.`,
+        expectedTools: ['list_mcp_servers', 'analyze_tools', 'run_terminal_cmd', 'grep']
+      },
+
+      {
+        id: 'performance-bottleneck-analysis',
+        name: 'Performance Bottleneck Analysis',
+        description: 'Identify and resolve performance bottlenecks in tool chains and workflows',
+        category: 'analytics',
+        tags: ['performance', 'bottlenecks', 'optimization', 'analysis', 'metrics'],
+        complexity: 'high',
+        useCase: 'Analyzing tool chain performance to identify and fix bottlenecks',
+        prompt: `Analyze performance bottlenecks in your tool chains and MCP workflows:
+
+1. **Baseline Measurement**: Establish performance baselines for all tools
+2. **Bottleneck Identification**: Identify the slowest components in chains
+3. **Dependency Analysis**: Check if dependencies are causing cascading delays
+4. **Resource Optimization**: Optimize resource usage and parallel execution
+5. **Caching Strategy**: Implement caching for expensive operations
+
+**Analysis Steps:**
+- Measure execution time for individual tools and complete chains
+- Identify sequential vs parallel execution opportunities
+- Check for redundant operations that can be eliminated
+- Analyze memory and network usage patterns
+- Implement performance monitoring and alerting
+
+Use performance analysis tools to create optimized, efficient workflows.`,
+        expectedTools: ['get_tool_chain_analysis', 'analyze_tool_chain_performance', 'validate_tool_chain', 'run_terminal_cmd']
+      },
+
+      {
+        id: 'tool-usage-analytics',
+        name: 'Tool Usage Analytics',
+        description: 'Analyze tool usage patterns and optimize MCP server configurations',
+        category: 'analytics',
+        tags: ['analytics', 'usage', 'patterns', 'optimization', 'insights'],
+        complexity: 'medium',
+        useCase: 'Understanding how tools are used to improve configurations and workflows',
+        prompt: `Analyze tool usage patterns across your MCP server ecosystem:
+
+1. **Usage Patterns**: Identify which tools are used most frequently
+2. **Success Rates**: Track success/failure rates for different tools
+3. **Tool Combinations**: Find common tool chaining patterns
+4. **Performance Correlation**: Correlate tool performance with usage patterns
+5. **Optimization Opportunities**: Identify underutilized or inefficient tools
+
+**Analytics Approach:**
+- Collect usage data over time periods
+- Analyze tool success rates and error patterns
+- Identify frequently chained tool combinations
+- Map tool usage to business outcomes
+- Generate recommendations for configuration improvements
+
+Use this data to optimize your MCP server setup and improve workflow efficiency.`,
+        expectedTools: ['analyze_tools', 'get_tool_chain_analysis', 'list_mcp_servers', 'sequentialthinking']
+      },
+
+      {
+        id: 'workflow-reliability-assessment',
+        name: 'Workflow Reliability Assessment',
+        description: 'Assess and improve the reliability of complex MCP workflows',
+        category: 'monitoring',
+        tags: ['reliability', 'workflows', 'assessment', 'resilience', 'monitoring'],
+        complexity: 'high',
+        useCase: 'Ensuring workflows are reliable and can handle failures gracefully',
+        prompt: `Assess and improve workflow reliability in your MCP ecosystem:
+
+1. **Reliability Metrics**: Track success rates and failure patterns
+2. **Failure Analysis**: Identify common failure points and causes
+3. **Resilience Testing**: Test workflows under various failure conditions
+4. **Recovery Mechanisms**: Implement retry logic and fallback strategies
+5. **Monitoring Setup**: Establish comprehensive workflow monitoring
+
+**Assessment Framework:**
+- Measure workflow completion rates over time
+- Identify single points of failure in tool chains
+- Test recovery mechanisms and error handling
+- Implement circuit breakers for unreliable components
+- Set up automated retry and recovery procedures
+
+Create robust, reliable workflows that can handle failures gracefully and maintain service continuity.`,
+        expectedTools: ['workflow_orchestrator', 'validate_tool_chain', 'analyze_tool_chain_performance', 'sequentialthinking']
+      },
+
+      {
+        id: 'cost-optimization-analysis',
+        name: 'Cost Optimization Analysis',
+        description: 'Analyze and optimize costs associated with MCP server usage and tool chains',
+        category: 'analytics',
+        tags: ['cost', 'optimization', 'efficiency', 'analytics', 'resource-management'],
+        complexity: 'medium',
+        useCase: 'Optimizing resource usage and reducing operational costs',
+        prompt: `Analyze and optimize costs in your MCP server ecosystem:
+
+1. **Resource Consumption**: Track compute, memory, and network usage
+2. **Cost Attribution**: Attribute costs to specific tools and workflows
+3. **Efficiency Analysis**: Identify inefficient resource usage patterns
+4. **Optimization Opportunities**: Find ways to reduce costs without sacrificing performance
+5. **Budget Planning**: Plan resource allocation based on usage patterns
+
+**Cost Optimization Strategy:**
+- Monitor resource usage across all MCP servers
+- Identify expensive operations and optimization opportunities
+- Implement caching and resource sharing where beneficial
+- Optimize tool chains for cost efficiency
+- Set up cost monitoring and alerting
+
+Balance performance requirements with cost efficiency to optimize your MCP infrastructure.`,
+        expectedTools: ['analyze_tool_chain_performance', 'get_tool_chain_analysis', 'run_terminal_cmd', 'list_mcp_servers']
+      },
+
+      // Security & Compliance Prompts
+      {
+        id: 'security-vulnerability-assessment',
+        name: 'Security Vulnerability Assessment',
+        description: 'Comprehensive security assessment of MCP servers and tool chains',
+        category: 'security',
+        tags: ['security', 'vulnerability', 'assessment', 'audit', 'compliance'],
+        complexity: 'high',
+        useCase: 'Identifying and mitigating security vulnerabilities in MCP ecosystems',
+        prompt: `Conduct a comprehensive security vulnerability assessment:
+
+1. **Server Security**: Assess MCP server security configurations
+2. **Tool Chain Security**: Analyze security implications of tool combinations
+3. **Data Protection**: Ensure sensitive data is handled securely
+4. **Access Control**: Verify proper authentication and authorization
+5. **Compliance Checks**: Validate compliance with security standards
+
+**Assessment Framework:**
+- Review server configurations for security best practices
+- Analyze tool chains for potential security vulnerabilities
+- Check data handling and transmission security
+- Validate access controls and permissions
+- Implement security monitoring and alerting
+
+Ensure your MCP ecosystem meets security standards and protects sensitive information.`,
+        expectedTools: ['grep', 'read_file', 'run_terminal_cmd', 'list_mcp_servers', 'analyze_tools']
+      },
+
+      {
+        id: 'compliance-audit-workflow',
+        name: 'Compliance Audit Workflow',
+        description: 'Conduct compliance audits for regulatory requirements and standards',
+        category: 'compliance',
+        tags: ['compliance', 'audit', 'regulatory', 'standards', 'governance'],
+        complexity: 'high',
+        useCase: 'Ensuring MCP server usage complies with regulatory and organizational standards',
+        prompt: `Conduct comprehensive compliance audits for your MCP ecosystem:
+
+1. **Regulatory Compliance**: Verify compliance with relevant regulations
+2. **Data Governance**: Ensure proper data handling and retention
+3. **Access Governance**: Validate user access controls and permissions
+4. **Audit Trails**: Maintain comprehensive audit logs
+5. **Policy Enforcement**: Ensure organizational policies are followed
+
+**Audit Process:**
+- Review all MCP server configurations against compliance requirements
+- Analyze data flows for compliance with data protection regulations
+- Validate access controls and permission structures
+- Check audit logging and monitoring capabilities
+- Generate compliance reports and remediation plans
+
+Maintain ongoing compliance with regulatory requirements and organizational policies.`,
+        expectedTools: ['read_file', 'grep', 'run_terminal_cmd', 'list_mcp_servers', 'analyze_tools']
+      },
+
+      {
+        id: 'data-privacy-protection',
+        name: 'Data Privacy Protection',
+        description: 'Implement data privacy protection measures in MCP workflows',
+        category: 'security',
+        tags: ['privacy', 'data-protection', 'gdpr', 'compliance', 'security'],
+        complexity: 'high',
+        useCase: 'Protecting sensitive data in MCP server operations and tool chains',
+        prompt: `Implement comprehensive data privacy protection measures:
+
+1. **Data Classification**: Identify and classify sensitive data types
+2. **Privacy Impact Assessment**: Assess privacy implications of tool chains
+3. **Data Minimization**: Ensure only necessary data is collected and processed
+4. **Consent Management**: Validate data processing consents
+5. **Privacy Controls**: Implement privacy-preserving techniques
+
+**Privacy Protection Framework:**
+- Identify all data types processed by MCP tools
+- Implement data anonymization and pseudonymization where appropriate
+- Ensure proper consent mechanisms for data processing
+- Implement data retention and deletion policies
+- Set up privacy monitoring and breach detection
+
+Protect user privacy while maintaining functionality in your MCP ecosystem.`,
+        expectedTools: ['grep', 'read_file', 'analyze_tools', 'validate_tool_chain', 'run_terminal_cmd']
+      },
+
+      {
+        id: 'access-control-audit',
+        name: 'Access Control Audit',
+        description: 'Audit and improve access control mechanisms in MCP server ecosystem',
+        category: 'security',
+        tags: ['access-control', 'audit', 'authorization', 'authentication', 'security'],
+        complexity: 'medium',
+        useCase: 'Ensuring proper access controls are implemented and maintained',
+        prompt: `Conduct comprehensive access control audits:
+
+1. **Authentication Review**: Verify authentication mechanisms
+2. **Authorization Analysis**: Check permission structures and roles
+3. **Access Patterns**: Analyze normal vs suspicious access patterns
+4. **Privilege Escalation**: Identify potential privilege escalation vulnerabilities
+5. **Access Monitoring**: Implement continuous access monitoring
+
+**Audit Methodology:**
+- Review all authentication and authorization configurations
+- Analyze role-based access control implementations
+- Check for least privilege principle adherence
+- Implement access logging and monitoring
+- Set up alerts for suspicious access patterns
+
+Maintain secure access controls throughout your MCP server ecosystem.`,
+        expectedTools: ['read_file', 'grep', 'run_terminal_cmd', 'list_mcp_servers', 'analyze_tools']
+      },
+
+      {
+        id: 'incident-response-planning',
+        name: 'Incident Response Planning',
+        description: 'Develop and maintain incident response plans for MCP server ecosystem',
+        category: 'security',
+        tags: ['incident-response', 'planning', 'security', 'disaster-recovery', 'monitoring'],
+        complexity: 'high',
+        useCase: 'Preparing for and responding to security incidents and system failures',
+        prompt: `Develop comprehensive incident response plans for your MCP ecosystem:
+
+1. **Threat Assessment**: Identify potential threats and vulnerabilities
+2. **Response Procedures**: Define clear incident response procedures
+3. **Communication Plans**: Establish incident communication protocols
+4. **Recovery Strategies**: Plan system recovery and data restoration
+5. **Testing and Drills**: Regular testing of incident response capabilities
+
+**Incident Response Framework:**
+- Define incident classification and escalation procedures
+- Establish clear roles and responsibilities during incidents
+- Implement automated alerting and notification systems
+- Create backup and recovery procedures
+- Conduct regular incident response drills and training
+
+Ensure rapid, effective response to security incidents and system failures.`,
+        expectedTools: ['workflow_orchestrator', 'run_terminal_cmd', 'list_mcp_servers', 'sequentialthinking', 'todo_write']
       }
     ];
 
@@ -2356,6 +2628,24 @@ variables:
 - **Schedule:** [How often to review and update]
 - **Owner:** [Who is responsible for maintenance]
 - **Documentation:** [Where pipeline docs are kept]`
+          }
+        ]
+      },
+
+      // Monitoring & Analytics Resource Sets
+      {
+        id: 'observability-suite',
+        name: 'Observability Suite',
+        description: 'Comprehensive monitoring and observability resources for MCP ecosystems',
+        category: 'monitoring',
+        complexity: 'medium',
+        tags: ['monitoring', 'observability', 'metrics', 'logging', 'alerting'],
+        resources: [
+          {
+            type: 'prompt',
+            name: 'System Health Monitoring Guide',
+            description: 'Structured approach to monitoring MCP server health',
+            content: 'Use the system-health-monitoring prompt to establish comprehensive monitoring for your MCP ecosystem.'
           }
         ]
       }

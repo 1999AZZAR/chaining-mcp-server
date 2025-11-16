@@ -261,3 +261,32 @@ export type WorkflowOrchestratorInput = z.infer<typeof WorkflowOrchestratorSchem
 // Time types
 export type GetCurrentTimeInput = z.infer<typeof GetCurrentTimeSchema>;
 export type ConvertTimeInput = z.infer<typeof ConvertTimeSchema>;
+
+// Tool Chain Verification Schemas
+export const ValidateToolChainSchema = z.object({
+  toolChain: z.array(z.object({
+    serverName: z.string().describe('Name of the MCP server'),
+    toolName: z.string().describe('Name of the tool'),
+    parameters: z.record(z.any()).optional().describe('Parameters for the tool'),
+    dependsOn: z.array(z.string()).optional().describe('Tool names this tool depends on'),
+  })).describe('The tool chain to validate'),
+  checkCircularDependencies: z.boolean().default(true).describe('Whether to check for circular dependencies'),
+  checkToolAvailability: z.boolean().default(true).describe('Whether to verify tools exist on their servers'),
+  checkParameterCompatibility: z.boolean().default(true).describe('Whether to check parameter compatibility between steps'),
+});
+
+export const AnalyzeToolChainPerformanceSchema = z.object({
+  toolChain: z.array(z.object({
+    serverName: z.string().describe('Name of the MCP server'),
+    toolName: z.string().describe('Name of the tool'),
+    parameters: z.record(z.any()).optional().describe('Parameters for the tool'),
+    dependsOn: z.array(z.string()).optional().describe('Tool names this tool depends on'),
+  })).describe('The tool chain to analyze'),
+  includeExecutionMetrics: z.boolean().default(true).describe('Whether to include execution time estimates'),
+  includeComplexityAnalysis: z.boolean().default(true).describe('Whether to analyze complexity metrics'),
+  includeOptimizationSuggestions: z.boolean().default(true).describe('Whether to provide optimization suggestions'),
+});
+
+// Tool Chain Verification types
+export type ValidateToolChainInput = z.infer<typeof ValidateToolChainSchema>;
+export type AnalyzeToolChainPerformanceInput = z.infer<typeof AnalyzeToolChainPerformanceSchema>;

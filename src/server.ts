@@ -31,6 +31,8 @@ import {
   WorkflowOrchestratorSchema,
   GetCurrentTimeSchema,
   ConvertTimeSchema,
+  ValidateToolChainSchema,
+  AnalyzeToolChainPerformanceSchema,
 } from './types.js';
 import { getToolInputSchema } from './schema-utils.js';
 
@@ -334,6 +336,17 @@ Use Cases:
             name: 'awesome_copilot_get_integration_status',
             description: 'Get the status of awesome-copilot integration',
             inputSchema: { type: 'object', properties: {} },
+          },
+          // Tool Chain Verification tools
+          {
+            name: 'validate_tool_chain',
+            description: 'Validate tool chains for correctness, dependencies, and potential issues. Checks for circular dependencies, tool availability, and parameter compatibility.',
+            inputSchema: getToolInputSchema(ValidateToolChainSchema),
+          },
+          {
+            name: 'analyze_tool_chain_performance',
+            description: 'Analyze performance metrics and efficiency of tool chains. Provides execution time estimates, complexity analysis, and optimization suggestions.',
+            inputSchema: getToolInputSchema(AnalyzeToolChainPerformanceSchema),
           },
         ],
       };
@@ -799,6 +812,13 @@ Use Cases:
 
           case 'awesome_copilot_get_integration_status':
             return await this.handleAwesomeCopilotGetIntegrationStatus();
+
+          // Tool Chain Verification tools
+          case 'validate_tool_chain':
+            return await this.handleValidateToolChain(args);
+
+          case 'analyze_tool_chain_performance':
+            return await this.handleAnalyzeToolChainPerformance(args);
 
           default:
             throw new Error(`Unknown tool: ${name}`);
@@ -1784,6 +1804,252 @@ Use Cases:
     } catch (error) {
       throw new Error(`Failed to get awesome-copilot integration status: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  /**
+   * Handle validate tool chain request
+   */
+  private async handleValidateToolChain(args: any) {
+    try {
+      // Validate input
+      const validatedArgs = ValidateToolChainSchema.parse(args);
+      const { toolChain, checkCircularDependencies, checkToolAvailability, checkParameterCompatibility } = validatedArgs;
+
+      const validationResults = {
+        isValid: true,
+        errors: [] as string[],
+        warnings: [] as string[],
+        toolChain: toolChain,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Check for circular dependencies
+      if (checkCircularDependencies) {
+        const dependencyGraph = new Map<string, string[]>();
+        toolChain.forEach(step => {
+          dependencyGraph.set(step.toolName, step.dependsOn || []);
+        });
+
+        // Simple cycle detection using DFS
+        const visited = new Set<string>();
+        const recursionStack = new Set<string>();
+
+        const hasCycle = (toolName: string): boolean => {
+          if (recursionStack.has(toolName)) return true;
+          if (visited.has(toolName)) return false;
+
+          visited.add(toolName);
+          recursionStack.add(toolName);
+
+          const dependencies = dependencyGraph.get(toolName) || [];
+          for (const dep of dependencies) {
+            if (hasCycle(dep)) return true;
+          }
+
+          recursionStack.delete(toolName);
+          return false;
+        };
+
+        for (const step of toolChain) {
+          if (hasCycle(step.toolName)) {
+            validationResults.isValid = false;
+            validationResults.errors.push(`Circular dependency detected involving tool: ${step.toolName}`);
+            break;
+          }
+        }
+      }
+
+      // Check tool availability
+      if (checkToolAvailability) {
+        const availableTools = this.discovery.getTools();
+        const availableToolNames = new Set(availableTools.map(t => `${t.serverName}:${t.name}`));
+
+        for (const step of toolChain) {
+          const toolKey = `${step.serverName}:${step.toolName}`;
+          if (!availableToolNames.has(toolKey)) {
+            validationResults.isValid = false;
+            validationResults.errors.push(`Tool '${step.toolName}' not found on server '${step.serverName}'`);
+          }
+        }
+      }
+
+      // Check parameter compatibility (basic validation)
+      if (checkParameterCompatibility) {
+        const availableTools = this.discovery.getTools();
+
+        for (const step of toolChain) {
+          const toolInfo = availableTools.find(t => t.serverName === step.serverName && t.name === step.toolName);
+          if (toolInfo) {
+            // Basic parameter validation - could be enhanced with more sophisticated checks
+            const requiredParams = this.extractRequiredParameters(toolInfo.inputSchema);
+            const providedParams = Object.keys(step.parameters || {});
+
+            for (const required of requiredParams) {
+              if (!providedParams.includes(required)) {
+                validationResults.warnings.push(`Tool '${step.toolName}' may be missing required parameter: ${required}`);
+              }
+            }
+          }
+        }
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(validationResults, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        throw new Error(`Invalid tool chain validation parameters: ${error.message}. Please check your tool chain definition format.`);
+      }
+      throw new Error(`Tool chain validation failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle analyze tool chain performance request
+   */
+  private async handleAnalyzeToolChainPerformance(args: any) {
+    try {
+      // Validate input
+      const validatedArgs = AnalyzeToolChainPerformanceSchema.parse(args);
+      const { toolChain, includeExecutionMetrics, includeComplexityAnalysis, includeOptimizationSuggestions } = validatedArgs;
+
+      const analysisResults = {
+        toolChain: toolChain,
+        metrics: {} as any,
+        complexity: {} as any,
+        optimizationSuggestions: [] as string[],
+        timestamp: new Date().toISOString(),
+      };
+
+      // Calculate execution metrics
+      if (includeExecutionMetrics) {
+        const availableTools = this.discovery.getTools();
+        let totalEstimatedDuration = 0;
+        let totalComplexity = 0;
+        const toolMetrics = [] as any[];
+
+        for (const step of toolChain) {
+          const toolInfo = availableTools.find(t => t.serverName === step.serverName && t.name === step.toolName);
+          if (toolInfo) {
+            const estimatedDuration = toolInfo.estimatedDuration || 1000; // Default 1 second
+            const complexity = toolInfo.estimatedComplexity || 1; // Default complexity 1
+
+            totalEstimatedDuration += estimatedDuration;
+            totalComplexity += complexity;
+
+            toolMetrics.push({
+              toolName: step.toolName,
+              serverName: step.serverName,
+              estimatedDuration,
+              complexity,
+            });
+          }
+        }
+
+        analysisResults.metrics = {
+          totalEstimatedDuration,
+          averageComplexity: totalComplexity / toolChain.length,
+          toolMetrics,
+          sequentialExecutionTime: totalEstimatedDuration,
+          parallelExecutionTime: Math.max(...toolMetrics.map(m => m.estimatedDuration)), // Assuming independent tools can run in parallel
+        };
+      }
+
+      // Analyze complexity
+      if (includeComplexityAnalysis) {
+        const dependencyCount = toolChain.reduce((sum, step) => sum + (step.dependsOn?.length || 0), 0);
+        const maxDependencies = Math.max(...toolChain.map(step => step.dependsOn?.length || 0));
+
+        analysisResults.complexity = {
+          totalSteps: toolChain.length,
+          totalDependencies: dependencyCount,
+          maxDependenciesPerStep: maxDependencies,
+          averageDependenciesPerStep: dependencyCount / toolChain.length,
+          complexityScore: toolChain.length + dependencyCount * 0.5, // Simple complexity formula
+          riskLevel: this.calculateRiskLevel(toolChain.length, dependencyCount, maxDependencies),
+        };
+      }
+
+      // Provide optimization suggestions
+      if (includeOptimizationSuggestions) {
+        const suggestions = [] as string[];
+
+        // Check for parallel execution opportunities
+        const independentSteps = toolChain.filter(step => !step.dependsOn || step.dependsOn.length === 0);
+        if (independentSteps.length > 1) {
+          suggestions.push(`Consider running ${independentSteps.length} independent steps in parallel to reduce execution time`);
+        }
+
+        // Check for complex dependencies
+        const complexSteps = toolChain.filter(step => (step.dependsOn?.length || 0) > 2);
+        if (complexSteps.length > 0) {
+          suggestions.push(`Steps with many dependencies (${complexSteps.map(s => s.toolName).join(', ')}) may be bottlenecks - consider refactoring`);
+        }
+
+        // Check for long chains
+        if (toolChain.length > 5) {
+          suggestions.push('Long tool chains (>5 steps) may be error-prone - consider breaking into smaller, focused chains');
+        }
+
+        // Suggest caching for repeated tools
+        const toolCounts = toolChain.reduce((counts, step) => {
+          counts[step.toolName] = (counts[step.toolName] || 0) + 1;
+          return counts;
+        }, {} as Record<string, number>);
+
+        const repeatedTools = Object.entries(toolCounts).filter(([, count]) => count > 1);
+        if (repeatedTools.length > 0) {
+          suggestions.push(`Tools used multiple times (${repeatedTools.map(([tool]) => tool).join(', ')}) - consider caching results`);
+        }
+
+        analysisResults.optimizationSuggestions = suggestions;
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(analysisResults, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        throw new Error(`Invalid tool chain performance analysis parameters: ${error.message}. Please check your tool chain definition format.`);
+      }
+      throw new Error(`Tool chain performance analysis failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Extract required parameters from tool input schema
+   */
+  private extractRequiredParameters(inputSchema: any): string[] {
+    try {
+      if (inputSchema && inputSchema.properties && inputSchema.required) {
+        return inputSchema.required;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Calculate risk level based on tool chain metrics
+   */
+  private calculateRiskLevel(stepCount: number, dependencyCount: number, maxDependencies: number): string {
+    const score = stepCount * 0.3 + dependencyCount * 0.4 + maxDependencies * 0.3;
+
+    if (score < 2) return 'Low';
+    if (score < 4) return 'Medium';
+    if (score < 6) return 'High';
+    return 'Very High';
   }
 
 
