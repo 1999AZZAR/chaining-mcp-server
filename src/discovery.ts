@@ -167,7 +167,7 @@ export class MCPServerDiscovery {
         const serverTools = await this.extractToolsFromServer(serverName, serverInfo);
         tools.push(...serverTools);
       } catch (error) {
-        console.warn(`Failed to analyze tools from server ${serverName}:`, error);
+        console.error(`Failed to analyze tools from server ${serverName}:`, error);
         // Add fallback tools for known server types
         const fallbackTools = this.getFallbackTools(serverName, serverInfo);
         tools.push(...fallbackTools);
@@ -208,7 +208,7 @@ export class MCPServerDiscovery {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error(`Timeout connecting to server ${serverName}`));
-      }, 5000); // 5 second timeout
+      }, 3000); // Reduced timeout to 3 seconds
 
       try {
         const child = spawn(serverInfo.command, serverInfo.args, {
@@ -229,13 +229,13 @@ export class MCPServerDiscovery {
 
         child.on('error', (error) => {
           clearTimeout(timeout);
-          reject(error);
+          reject(new Error(`Failed to spawn server ${serverName}: ${error.message}`));
         });
 
         child.on('close', (code) => {
           clearTimeout(timeout);
           if (code !== 0) {
-            reject(new Error(`Server exited with code ${code}: ${errorOutput}`));
+            reject(new Error(`Server ${serverName} exited with code ${code}: ${errorOutput}`));
             return;
           }
 
@@ -244,7 +244,7 @@ export class MCPServerDiscovery {
             const tools = this.parseMCPToolsResponse(output, serverName);
             resolve(tools);
           } catch (parseError) {
-            reject(parseError);
+            reject(new Error(`Failed to parse response from server ${serverName}: ${parseError instanceof Error ? parseError.message : String(parseError)}`));
           }
         });
 
@@ -261,7 +261,7 @@ export class MCPServerDiscovery {
 
       } catch (error) {
         clearTimeout(timeout);
-        reject(error);
+        reject(new Error(`Failed to query server ${serverName}: ${error instanceof Error ? error.message : String(error)}`));
       }
     });
   }

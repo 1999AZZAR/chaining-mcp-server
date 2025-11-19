@@ -5,6 +5,7 @@ import {
   ListToolsRequestSchema,
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
+  InitializeRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 
@@ -80,6 +81,29 @@ export class ChainingMCPServer {
    * Setup MCP server handlers
    */
   private setupHandlers(): void {
+    // Initialize handler
+    this.server.setRequestHandler(InitializeRequestSchema, async (request) => {
+      const { protocolVersion, capabilities, clientInfo } = request.params;
+
+      console.error(`Initializing chaining-mcp-server with protocol version ${protocolVersion}`);
+
+      // Return server capabilities
+      return {
+        protocolVersion,
+        capabilities: {
+          tools: {
+            listChanged: true,
+          },
+          resources: {},
+        },
+        serverInfo: {
+          name: 'chaining-mcp-server',
+          version: '1.0.0',
+          description: 'Comprehensive MCP server with intelligent tool chaining, route optimization, persistent memory, sequential thinking, and time management',
+        },
+      };
+    });
+
     // List tools handler
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
@@ -447,7 +471,11 @@ Use Cases:
 
       switch (uri) {
         case 'chaining://servers':
-          await this.ensureInitialized();
+          try {
+            await this.ensureInitialized();
+          } catch (error) {
+            // Return empty servers list if initialization fails
+          }
           return {
             contents: [
               {
@@ -459,7 +487,11 @@ Use Cases:
           };
 
         case 'chaining://tools':
-          await this.ensureInitialized();
+          try {
+            await this.ensureInitialized();
+          } catch (error) {
+            // Return empty tools list if initialization fails
+          }
           return {
             contents: [
               {
@@ -471,7 +503,11 @@ Use Cases:
           };
 
         case 'chaining://analysis':
-          await this.ensureInitialized();
+          try {
+            await this.ensureInitialized();
+          } catch (error) {
+            // Return basic analysis if initialization fails
+          }
           const analysis = {
             totalServers: this.discovery.getServers().length,
             totalTools: this.discovery.getTools().length,
@@ -854,22 +890,23 @@ Use Cases:
   private async ensureInitialized(): Promise<void> {
     if (!this.isInitialized) {
       try {
-        console.log('Initializing chaining MCP server...');
-        
+        console.error('Initializing chaining MCP server...');
+
         await this.discovery.discoverServers();
-        console.log(`Discovered ${this.discovery.getServers().length} MCP servers`);
-        
+        console.error(`Discovered ${this.discovery.getServers().length} MCP servers`);
+
         await this.discovery.analyzeTools();
-        console.log(`Analyzed ${this.discovery.getTools().length} tools`);
-        
+        console.error(`Analyzed ${this.discovery.getTools().length} tools`);
+
         this.optimizer.setTools(this.discovery.getTools());
         this.sequentialIntegration.setAvailableTools(this.discovery.getTools());
-        
+
         this.isInitialized = true;
-        console.log('Chaining MCP server initialization completed successfully');
+        console.error('Chaining MCP server initialization completed successfully');
       } catch (error) {
         console.error('Failed to initialize chaining MCP server:', error);
-        throw new Error(`Server initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+        // Don't throw error - allow server to continue with limited functionality
+        // throw new Error(`Server initialization failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
