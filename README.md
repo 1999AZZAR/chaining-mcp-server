@@ -5,6 +5,7 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 ## Features
 
 ### Core Chaining Capabilities
+
 - **Smart Server Discovery**: Automatically discovers MCP servers from `~/.cursor/mcp.json` and other configuration locations
 - **Tool Analysis**: Analyzes available tools and their capabilities
 - **Route Optimization**: Generates intelligent suggestions for tool chaining based on optimization criteria
@@ -13,12 +14,14 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Performance Analysis**: Analyzes tool chain performance with optimization recommendations
 
 ### Awesome Copilot Integration
+
 - **Collections Access**: Browse and search development collections (TypeScript, Python, React, etc.)
 - **Instructions Loading**: Access detailed development instructions and guides
 - **Smart Caching**: Efficient storage and retrieval of development resources
 - **Expert Guidance**: Direct access to curated development knowledge and best practices
 
 ### Advanced Thinking Capabilities
+
 - **Sequential Thinking**: Dynamic problem-solving through structured thinking process
 - **Thought Branching**: Support for alternative reasoning paths and revisions
 - **Context Preservation**: Maintains thinking context across multiple steps
@@ -27,17 +30,20 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Workflow Orchestration**: Execute complex multi-server workflows with dependency management
 
 ### Time Management
+
 - **Timezone Support**: Get current time in any IANA timezone
 - **Time Conversion**: Convert times between different timezones
 - **DST Handling**: Automatic daylight saving time detection
 
 ### Enterprise Capabilities
+
 - **Monitoring & Analytics**: System health monitoring, performance bottleneck analysis, tool usage analytics
 - **Security & Compliance**: Vulnerability assessment, compliance audit workflows, data privacy protection
 - **Tool Chain Verification**: Validate tool chains for correctness, dependencies, and security issues
 - **Performance Optimization**: Analyze and optimize tool chain performance with actionable recommendations
 
 ### Technical Features
+
 - **Comprehensive Validation**: Uses Zod schemas for robust data validation
 - **Production Ready**: Clean project structure with proper `.gitignore` and build system
 - **Unified Interface**: Single server providing all functionality
@@ -46,7 +52,7 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Enhanced Time Management**: Better timezone handling with proper DST detection
 - **Advanced Sequential Thinking**: Enhanced thought processing with branching and revision support
 - **Awesome Copilot Integration**: Direct access to curated development collections and instructions
-- **40 Prompts & 11 Resource Sets**: Comprehensive collection covering development, orchestration, MCP ecosystem workflows, monitoring, analytics, security, and compliance guidance
+- **40 Prompts & 12 Resource Sets**: Comprehensive collection covering development, orchestration, MCP ecosystem workflows, monitoring, analytics, security, and compliance guidance
 - **Intelligent Tool Guidance**: Structured guidance to help models effectively use available toolsets
 
 ## Prebuilt Prompts & Resource Sets
@@ -56,6 +62,7 @@ The chaining MCP server now includes a comprehensive collection of **42 prebuilt
 The prompts are organized into specialized categories including MCP ecosystem exploration, cross-server orchestration, time-sensitive operations, intelligent routing, collaborative development, and **advanced tool chaining**.
 
 **Tool Chaining Resources:**
+
 - **5 specialized resource sets** for tool chaining covering project analysis, implementation, debugging, cross-server orchestration, and CI/CD
 - **6 advanced tool-chaining prompts** for complex workflows and enterprise-scale orchestration
 - **Comprehensive chain templates** with step-by-step execution guides
@@ -63,6 +70,7 @@ The prompts are organized into specialized categories including MCP ecosystem ex
 - **Production-ready orchestration** chains for enterprise environments
 
 **Enterprise Resources:**
+
 - **5 monitoring & analytics prompts** for system health, performance analysis, and optimization
 - **5 security & compliance prompts** for vulnerability assessment, audit workflows, and incident response
 - **Enterprise-grade resource sets** for observability, reliability, security assessment, and compliance management
@@ -84,6 +92,7 @@ Prebuilt prompts provide structured guidance for specific development tasks:
 - **Security & Compliance**: Vulnerability assessment, compliance audit workflows, data privacy protection, access control audit, incident response planning
 
 Each prompt includes:
+
 - Clear task description and objectives
 - Step-by-step guidance
 - Expected tools to use
@@ -108,6 +117,7 @@ Resource sets are curated collections of prompts, workflows, templates, and exam
 - **Incident Response Playbook**: Comprehensive incident response resources and procedures
 
 Each resource set contains:
+
 - Multiple resources (prompts, workflows, templates, examples)
 - Complexity rating
 - Category classification
@@ -116,6 +126,7 @@ Each resource set contains:
 ### Tool Chain Verification Examples
 
 #### Tool Chain Validation
+
 ```javascript
 // Validate a tool chain for correctness and security
 const validation = await mcpClient.callTool('validate_tool_chain', {
@@ -140,6 +151,7 @@ console.log(validation);
 ```
 
 #### Performance Analysis
+
 ```javascript
 // Analyze tool chain performance and get optimization suggestions
 const analysis = await mcpClient.callTool('analyze_tool_chain_performance', {
@@ -164,6 +176,7 @@ console.log(analysis);
 ```
 
 #### Monitoring & Analytics Prompts
+
 ```javascript
 // Use the system health monitoring prompt
 const healthPrompt = await mcpClient.callTool('get_prompt', {
@@ -177,6 +190,7 @@ const perfPrompt = await mcpClient.callTool('get_prompt', {
 ```
 
 #### Security & Compliance Prompts
+
 ```javascript
 // Use the security vulnerability assessment prompt
 const securityPrompt = await mcpClient.callTool('get_prompt', {
@@ -211,7 +225,7 @@ These prebuilt prompts and resource sets help models:
    npm run build
    ```
 
-## Configuration
+Configuration
 
 Add the chaining MCP server to your MCP client configuration:
 
@@ -238,6 +252,7 @@ Add the chaining MCP server to your MCP client configuration:
 ### Core Chaining Tools
 
 #### 1. `list_mcp_servers`
+
 Lists all discovered MCP servers on the system.
 
 **Input**: None
@@ -245,22 +260,27 @@ Lists all discovered MCP servers on the system.
 **Output**: JSON object containing server information including name, command, args, environment variables, and capabilities.
 
 #### 2. `analyze_tools`
+
 Analyzes available tools from discovered MCP servers.
 
 **Input**:
+
 - `serverName` (optional): Filter by specific server name
 - `category` (optional): Filter by tool category
 
 **Output**: JSON object containing tool analysis, grouped by server and category.
 
 #### 3. `generate_route_suggestions`
+
 Generates optimal route suggestions for a given task.
 
 **Input**:
+
 - `task` (required): The task or problem to solve
 - `criteria` (optional): Optimization criteria object
 
 **Criteria Options**:
+
 - `prioritizeSpeed`: Optimize for speed
 - `prioritizeSimplicity`: Optimize for simplicity
 - `prioritizeReliability`: Optimize for reliability
@@ -272,9 +292,11 @@ Generates optimal route suggestions for a given task.
 **Output**: JSON object containing suggested routes with tools, estimated duration, complexity, confidence, and reasoning.
 
 #### 4. `analyze_with_sequential_thinking`
+
 Analyzes complex workflows using sequential thinking.
 
 **Input**:
+
 - `problem` (required): The problem to analyze
 - `criteria` (optional): Optimization criteria
 - `maxThoughts` (optional): Maximum number of thoughts (1-20, default: 10)
@@ -282,9 +304,11 @@ Analyzes complex workflows using sequential thinking.
 **Output**: JSON object containing sequential thinking analysis, thoughts, and suggestions.
 
 #### 5. `get_tool_chain_analysis`
+
 Gets comprehensive analysis of available tools and suggested routes.
 
 **Input**:
+
 - `input` (required): Input description for analysis
 - `criteria` (optional): Optimization criteria
 
@@ -293,6 +317,7 @@ Gets comprehensive analysis of available tools and suggested routes.
 ### Awesome Copilot Tools
 
 #### 6. `awesome_copilot_list_collections`
+
 List all available awesome-copilot collections.
 
 **Input**: None
@@ -300,39 +325,48 @@ List all available awesome-copilot collections.
 **Output**: JSON object containing collections with their metadata and items.
 
 #### 7. `awesome_copilot_search_collections`
+
 Search awesome-copilot collections by keywords.
 
 **Input**:
+
 - `query` (required): Search query to match against collection names, descriptions, or tags
 
 **Output**: JSON object with matching collections and their metadata.
 
 #### 8. `awesome_copilot_get_collection`
+
 Get a specific awesome-copilot collection by ID.
 
 **Input**:
+
 - `id` (required): The collection ID to retrieve
 
 **Output**: JSON object containing the complete collection with all its items.
 
 #### 9. `awesome_copilot_search_instructions`
+
 Search awesome-copilot instructions by keywords.
 
 **Input**:
+
 - `keywords` (required): Keywords to search for in instruction titles, descriptions, or tags
 
 **Output**: JSON object with matching instructions and their metadata.
 
 #### 10. `awesome_copilot_load_instruction`
+
 Load a specific awesome-copilot instruction.
 
 **Input**:
+
 - `mode` (required): The instruction mode (e.g., "instructions", "prompts")
 - `filename` (required): The filename of the instruction to load
 
 **Output**: JSON object containing the instruction content and metadata.
 
 #### 11. `awesome_copilot_get_integration_status`
+
 Get the status of awesome-copilot integration.
 
 **Input**: None
@@ -342,9 +376,11 @@ Get the status of awesome-copilot integration.
 ### Sequential Thinking Tool
 
 #### 12. `sequentialthinking`
+
 A detailed tool for dynamic and reflective problem-solving through thoughts.
 
 **Input**:
+
 - `thought` (required): Your current thinking step
 - `nextThoughtNeeded` (required): Whether another thought step is needed
 - `thoughtNumber` (required): Current thought number
@@ -358,9 +394,11 @@ A detailed tool for dynamic and reflective problem-solving through thoughts.
 **Output**: JSON object with thought processing results and metadata.
 
 #### 13. `brainstorming`
+
 Generate creative ideas and solutions for problems using different brainstorming approaches.
 
 **Input**:
+
 - `topic` (required): The topic or problem to brainstorm about
 - `context` (optional): Additional context or background information
 - `approach` (optional): The brainstorming approach ('creative', 'analytical', 'practical', 'innovative') - defaults to 'creative'
@@ -371,15 +409,18 @@ Generate creative ideas and solutions for problems using different brainstorming
 **Output**: JSON object containing generated ideas with feasibility, innovation, and effort metrics, plus evaluation and recommendations.
 
 **Approaches**:
+
 - `creative`: Generate innovative and unconventional ideas
 - `analytical`: Data-driven and logical solution generation
 - `practical`: Realistic and implementable solutions
 - `innovative`: Cutting-edge approaches combining multiple perspectives
 
 #### 14. `workflow_orchestrator`
+
 Execute complex multi-server workflows across the MCP ecosystem with dependency management and error handling.
 
 **Input**:
+
 - `workflowId` (required): Unique identifier for the workflow
 - `name` (required): Human-readable name for the workflow
 - `description` (optional): Description of what this workflow does
@@ -399,6 +440,7 @@ Execute complex multi-server workflows across the MCP ecosystem with dependency 
 **Output**: JSON object containing workflow execution results, step-by-step status, execution time, and aggregated results.
 
 **Key Features**:
+
 - **Dependency Management**: Automatic handling of step dependencies and execution order
 - **Parameter Passing**: Automatic passing of outputs from one step as inputs to dependent steps
 - **Error Handling**: Configurable retry logic and failure handling strategies
@@ -409,17 +451,21 @@ Execute complex multi-server workflows across the MCP ecosystem with dependency 
 ### Time Management Tools
 
 #### 17. `get_current_time`
+
 Get current time in a specific timezone.
 
 **Input**:
+
 - `timezone` (required): IANA timezone name (e.g., 'America/New_York', 'Europe/London')
 
 **Output**: JSON object with timezone, datetime, day of week, and DST status.
 
 #### 18. `convert_time`
+
 Convert time between timezones.
 
 **Input**:
+
 - `source_timezone` (required): Source IANA timezone name
 - `time` (required): Time to convert in 24-hour format (HH:MM)
 - `target_timezone` (required): Target IANA timezone name
@@ -427,17 +473,21 @@ Convert time between timezones.
 **Output**: JSON object with source and target times, plus time difference.
 
 #### 19. `get_prompt`
+
 Get a specific prebuilt prompt by ID.
 
 **Input**:
+
 - `id` (required): The ID of the prompt to retrieve
 
 **Output**: JSON object containing the complete prompt with its content and metadata.
 
 #### 20. `search_prompts`
+
 Search for prompts by keywords, category, or tags.
 
 **Input**:
+
 - `query` (required): Search query to match against prompt names, descriptions, categories, or tags
 - `category` (optional): Filter by category (development, debugging, etc.)
 - `complexity` (optional): Filter by complexity level (low, medium, high)
@@ -445,17 +495,21 @@ Search for prompts by keywords, category, or tags.
 **Output**: JSON object with matching prompts and their metadata.
 
 #### 21. `get_resource_set`
+
 Get a specific resource set by ID.
 
 **Input**:
+
 - `id` (required): The ID of the resource set to retrieve
 
 **Output**: JSON object containing the complete resource set with all its resources.
 
 #### 22. `search_resource_sets`
+
 Search for resource sets by keywords, category, or tags.
 
 **Input**:
+
 - `query` (required): Search query to match against resource set names, descriptions, categories, or tags
 - `category` (optional): Filter by category (development, debugging, etc.)
 - `complexity` (optional): Filter by complexity level (low, medium, high)
@@ -463,9 +517,11 @@ Search for resource sets by keywords, category, or tags.
 **Output**: JSON object with matching resource sets and their metadata.
 
 #### 23. `validate_tool_chain`
+
 Validate tool chains for correctness, dependencies, and potential issues. Checks for circular dependencies, tool availability, and parameter compatibility.
 
 **Input**:
+
 - `toolChain` (required): Array of tool chain steps with server name, tool name, parameters, and dependencies
 - `checkCircularDependencies` (optional): Whether to check for circular dependencies (default: true)
 - `checkToolAvailability` (optional): Whether to verify tools exist on their servers (default: true)
@@ -474,9 +530,11 @@ Validate tool chains for correctness, dependencies, and potential issues. Checks
 **Output**: JSON object with validation results including errors, warnings, and overall validity status.
 
 #### 24. `analyze_tool_chain_performance`
+
 Analyze performance metrics and efficiency of tool chains. Provides execution time estimates, complexity analysis, and optimization suggestions.
 
 **Input**:
+
 - `toolChain` (required): Array of tool chain steps to analyze
 - `includeExecutionMetrics` (optional): Whether to include execution time estimates (default: true)
 - `includeComplexityAnalysis` (optional): Whether to analyze complexity metrics (default: true)
@@ -487,47 +545,61 @@ Analyze performance metrics and efficiency of tool chains. Provides execution ti
 ## Available Resources
 
 ### `chaining://servers`
+
 Returns a JSON list of all discovered MCP servers.
 
 ### `chaining://tools`
+
 Returns a JSON list of all available tools from discovered servers.
 
 ### `chaining://analysis`
+
 Returns a JSON summary of the current analysis state.
 
 ### `chaining://prompts`
+
 Returns a JSON collection of all available prebuilt prompts for common development tasks.
 
 ### `chaining://resources`
+
 Returns a JSON collection of curated resource sets for different development scenarios.
 
 ### `chaining://prompts/overview`
+
 Returns a JSON overview of available prompts by category and complexity level.
 
 ### `chaining://awesome-copilot/collections`
+
 Returns a JSON collection of all available awesome-copilot collections with their metadata.
 
 ### `chaining://awesome-copilot/instructions`
+
 Returns a JSON collection of all available awesome-copilot instructions with their metadata.
 
 ### `chaining://awesome-copilot/status`
+
 Returns a JSON object with the current status of awesome-copilot integration.
 
 ### `chaining://sequential/state`
+
 Returns a JSON object with the current state of sequential thinking sessions, including thought history and active session status.
 
 ### `chaining://workflows/status`
+
 Returns a JSON object with the status of active and completed workflow orchestrations, including execution progress and results.
 
 ### `chaining://tool-chains`
+
 Returns a JSON collection of comprehensive tool chaining resources including prompts and resource sets specifically designed for complex development workflows and orchestration patterns.
 
 ### `chaining://tool-chains/overview`
+
 Returns a JSON overview of available tool chaining resources organized by category and complexity level, providing insights into the tool chaining capabilities.
 
 ## Usage Examples
 
 ### Basic Server Discovery
+
 ```javascript
 // List all discovered MCP servers
 const servers = await mcpClient.callTool('list_mcp_servers', {});
@@ -535,6 +607,7 @@ console.log(servers);
 ```
 
 ### Tool Analysis
+
 ```javascript
 // Analyze tools by category
 const analysis = await mcpClient.callTool('analyze_tools', {
@@ -544,6 +617,7 @@ console.log(analysis);
 ```
 
 ### Route Generation
+
 ```javascript
 // Generate route suggestions for a task
 const routes = await mcpClient.callTool('generate_route_suggestions', {
@@ -557,6 +631,7 @@ console.log(routes);
 ```
 
 ### Sequential Thinking Analysis
+
 ```javascript
 // Analyze complex workflow with sequential thinking
 const analysis = await mcpClient.callTool('analyze_with_sequential_thinking', {
@@ -571,6 +646,7 @@ console.log(analysis);
 ```
 
 ### Awesome Copilot Integration
+
 ```javascript
 // List all available collections
 const collections = await mcpClient.callTool('awesome_copilot_list_collections', {});
@@ -598,6 +674,7 @@ const instruction = await mcpClient.callTool('awesome_copilot_load_instruction',
 ```
 
 ### Sequential Thinking
+
 ```javascript
 // Use sequential thinking for complex problem solving
 const thought1 = await mcpClient.callTool('sequentialthinking', {
@@ -616,6 +693,7 @@ const thought2 = await mcpClient.callTool('sequentialthinking', {
 ```
 
 ### Brainstorming
+
 ```javascript
 // Generate creative ideas for a product feature
 const creativeIdeas = await mcpClient.callTool('brainstorming', {
@@ -643,6 +721,7 @@ const analyticalIdeas = await mcpClient.callTool('brainstorming', {
 ```
 
 ### Workflow Orchestration
+
 ```javascript
 // Execute a multi-server research workflow
 const researchWorkflow = await mcpClient.callTool('workflow_orchestrator', {
@@ -694,6 +773,7 @@ console.log('Active workflows:', workflowStatus);
 ```
 
 ### Time Management
+
 ```javascript
 // Get current time in different timezones
 const nyTime = await mcpClient.callTool('get_current_time', {
@@ -793,6 +873,7 @@ console.log('Tool chaining overview:', toolChainsOverview);
 ## Development
 
 ### Project Structure
+
 ```
 src/
 ├── index.ts                           # Main entry point
@@ -812,7 +893,9 @@ src/
 │   ├── awesome-copilot-integration.ts # Awesome Copilot integration
 │   └── sequential-integration.ts      # Sequential thinking integration
 ├── prompts/
-│   └── prompt-manager.ts              # Prebuilt prompts and resource sets (40 prompts, 11 resource sets)
+│   ├── prompt-definitions.ts          # Prompt and resource set data definitions
+│   ├── prompt-handlers.ts             # Dynamic prompt generation and validation logic
+│   └── prompt-registry.ts             # Registry for managing prompts and resource sets (40 prompts, 12 resource sets)
 ├── config/
 │   ├── config-loader.ts               # Configuration loading utilities
 │   └── discovery-config.ts            # Discovery configuration
@@ -835,6 +918,7 @@ src/
 ```
 
 ### Building
+
 ```bash
 npm run build    # Build TypeScript to JavaScript
 npm run dev      # Watch mode for development
@@ -844,6 +928,7 @@ npm run clean    # Clean dist directory
 ### Testing
 
 #### Local Testing
+
 ```bash
 node dist/index.js
 ```
@@ -853,21 +938,27 @@ node dist/index.js
 This server is designed to work seamlessly with other MCP servers in your ecosystem:
 
 ### Sequential Thinking MCP Integration
+
 When the sequential thinking MCP server is available, the chaining server can:
+
 1. Use sequential thinking to analyze complex problems
 2. Generate more intelligent route suggestions
 3. Provide detailed reasoning for recommendations
 4. Handle multi-step workflow planning
 
 ### Awesome Copilot Integration
+
 The server integrates with awesome-copilot to provide:
+
 1. Access to curated development collections and instructions
 2. Expert guidance for various programming languages and frameworks
 3. Best practices and development workflows
 4. Structured learning resources for different skill levels
 
 ### Project-Guardian Integration
+
 The chaining server complements Project-Guardian by:
+
 1. Providing high-level coordination and orchestration
 2. Offering development guidance and workflow management
 3. Avoiding duplicate functionality (database operations are handled by Project-Guardian)

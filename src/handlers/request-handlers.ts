@@ -3,7 +3,7 @@ import { SmartRouteOptimizer } from '../core/optimizer.js';
 import { SequentialThinkingIntegration } from '../integrations/sequential-integration.js';
 import { SequentialThinkingManager } from '../managers/sequential-thinking-manager.js';
 import { TimeManager } from '../managers/time-manager.js';
-import { PromptManager } from '../prompts/prompt-manager.js';
+import { PromptRegistry } from '../prompts/prompt-registry.js';
 import { AwesomeCopilotIntegration } from '../integrations/awesome-copilot-integration.js';
 import { BrainstormingManager } from '../managers/brainstorming-manager.js';
 import { WorkflowOrchestrator } from '../managers/workflow-orchestrator.js';
@@ -15,7 +15,7 @@ export class RequestHandlers {
     private sequentialIntegration: SequentialThinkingIntegration,
     private sequentialThinkingManager: SequentialThinkingManager,
     private timeManager: TimeManager,
-    private promptManager: PromptManager,
+    private promptRegistry: PromptRegistry,
     private awesomeCopilotIntegration: AwesomeCopilotIntegration,
     private brainstormingManager: BrainstormingManager,
     private workflowOrchestrator: WorkflowOrchestrator
@@ -232,12 +232,12 @@ export class RequestHandlers {
   private async handlePromptResourceTool(name: string, args: any): Promise<any> {
     switch (name) {
       case 'get_prompt':
-        const prompts = this.promptManager.getAllPrompts();
+        const prompts = this.promptRegistry.getAllPrompts();
         const prompt = prompts.find(p => p.name === args.id);
         return prompt || { error: 'Prompt not found' };
 
       case 'search_prompts':
-        const allPrompts = this.promptManager.getAllPrompts();
+        const allPrompts = this.promptRegistry.getAllPrompts();
         const filteredPrompts = allPrompts.filter(p =>
           (args.query ? p.name?.includes(args.query) || p.description?.includes(args.query) : true) &&
           (args.category ? p.category === args.category : true) &&
@@ -249,12 +249,12 @@ export class RequestHandlers {
         };
 
       case 'get_resource_set':
-        const resourceSets = this.promptManager.getAllResourceSets();
+        const resourceSets = this.promptRegistry.getAllResourceSets();
         const resourceSet = resourceSets.find(rs => rs.name === args.id);
         return resourceSet || { error: 'Resource set not found' };
 
       case 'search_resource_sets':
-        const allResourceSets = this.promptManager.getAllResourceSets();
+        const allResourceSets = this.promptRegistry.getAllResourceSets();
         const filteredResourceSets = allResourceSets.filter(rs =>
           (args.query ? rs.name?.includes(args.query) || rs.description?.includes(args.query) : true) &&
           (args.category ? rs.category === args.category : true) &&

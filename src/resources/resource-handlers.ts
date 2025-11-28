@@ -1,5 +1,5 @@
 import { MCPServerDiscovery } from '../core/discovery.js';
-import { PromptManager } from '../prompts/prompt-manager.js';
+import { PromptRegistry } from '../prompts/prompt-registry.js';
 import { AwesomeCopilotIntegration } from '../integrations/awesome-copilot-integration.js';
 import { SequentialThinkingManager } from '../managers/sequential-thinking-manager.js';
 import { WorkflowOrchestrator } from '../managers/workflow-orchestrator.js';
@@ -7,7 +7,7 @@ import { WorkflowOrchestrator } from '../managers/workflow-orchestrator.js';
 export class ResourceHandlers {
   constructor(
     private discovery: MCPServerDiscovery,
-    private promptManager: PromptManager,
+    private promptRegistry: PromptRegistry,
     private awesomeCopilotIntegration: AwesomeCopilotIntegration,
     private sequentialThinkingManager: SequentialThinkingManager,
     private workflowOrchestrator: WorkflowOrchestrator
@@ -54,18 +54,18 @@ export class ResourceHandlers {
 
       case 'chaining://prompts':
         return {
-          prompts: this.promptManager.getAllPrompts(),
-          total: this.promptManager.getAllPrompts().length,
+          prompts: this.promptRegistry.getAllPrompts(),
+          total: this.promptRegistry.getAllPrompts().length,
         };
 
       case 'chaining://resources':
         return {
-          resourceSets: this.promptManager.getAllResourceSets(),
-          total: this.promptManager.getAllResourceSets().length,
+          resourceSets: this.promptRegistry.getAllResourceSets(),
+          total: this.promptRegistry.getAllResourceSets().length,
         };
 
       case 'chaining://prompts/overview':
-        const prompts = this.promptManager.getAllPrompts();
+        const prompts = this.promptRegistry.getAllPrompts();
         const categories = [...new Set(prompts.map(p => p.category || 'general'))];
         const complexities = [...new Set(prompts.map(p => p.complexity || 'medium'))];
 
@@ -133,19 +133,19 @@ export class ResourceHandlers {
 
       case 'chaining://tool-chains':
         return {
-          prompts: this.promptManager.getAllPrompts().filter(p =>
+          prompts: this.promptRegistry.getAllPrompts().filter(p =>
             p.category === 'tool-chaining' || p.tags?.includes('tool-chaining')
           ),
-          resourceSets: this.promptManager.getAllResourceSets().filter(rs =>
+          resourceSets: this.promptRegistry.getAllResourceSets().filter(rs =>
             rs.category === 'tool-chaining' || rs.tags?.includes('tool-chaining')
           ),
         };
 
       case 'chaining://tool-chains/overview':
-        const toolChainPrompts = this.promptManager.getAllPrompts().filter(p =>
+        const toolChainPrompts = this.promptRegistry.getAllPrompts().filter(p =>
           p.category === 'tool-chaining' || p.tags?.includes('tool-chaining')
         );
-        const toolChainResourceSets = this.promptManager.getAllResourceSets().filter(rs =>
+        const toolChainResourceSets = this.promptRegistry.getAllResourceSets().filter(rs =>
           rs.category === 'tool-chaining' || rs.tags?.includes('tool-chaining')
         );
 

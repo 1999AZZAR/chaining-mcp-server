@@ -13,7 +13,7 @@ import { SmartRouteOptimizer } from './core/optimizer.js';
 import { SequentialThinkingIntegration } from './integrations/sequential-integration.js';
 import { SequentialThinkingManager } from './managers/sequential-thinking-manager.js';
 import { TimeManager } from './managers/time-manager.js';
-import { PromptManager } from './prompts/prompt-manager.js';
+import { PromptRegistry } from './prompts/prompt-registry.js';
 import { AwesomeCopilotIntegration } from './integrations/awesome-copilot-integration.js';
 import { BrainstormingManager } from './managers/brainstorming-manager.js';
 import { WorkflowOrchestrator } from './managers/workflow-orchestrator.js';
@@ -30,7 +30,7 @@ export class ChainingMCPServer {
   private sequentialIntegration: SequentialThinkingIntegration;
   private sequentialThinkingManager: SequentialThinkingManager;
   private timeManager: TimeManager;
-  private promptManager: PromptManager;
+  private promptRegistry: PromptRegistry;
   private awesomeCopilotIntegration: AwesomeCopilotIntegration;
   private brainstormingManager: BrainstormingManager;
   private workflowOrchestrator: WorkflowOrchestrator;
@@ -45,7 +45,7 @@ export class ChainingMCPServer {
     this.sequentialIntegration = new SequentialThinkingIntegration();
     this.sequentialThinkingManager = new SequentialThinkingManager();
     this.timeManager = new TimeManager();
-    this.promptManager = new PromptManager();
+    this.promptRegistry = new PromptRegistry();
     this.awesomeCopilotIntegration = new AwesomeCopilotIntegration();
     this.brainstormingManager = new BrainstormingManager();
     this.workflowOrchestrator = new WorkflowOrchestrator();
@@ -53,7 +53,7 @@ export class ChainingMCPServer {
     // Initialize handlers
     this.resourceHandlers = new ResourceHandlers(
       this.discovery,
-      this.promptManager,
+      this.promptRegistry,
       this.awesomeCopilotIntegration,
       this.sequentialThinkingManager,
       this.workflowOrchestrator
@@ -65,7 +65,7 @@ export class ChainingMCPServer {
       this.sequentialIntegration,
       this.sequentialThinkingManager,
       this.timeManager,
-      this.promptManager,
+      this.promptRegistry,
       this.awesomeCopilotIntegration,
       this.brainstormingManager,
       this.workflowOrchestrator
