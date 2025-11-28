@@ -1,4 +1,4 @@
-import { SequentialThinkingRequest, RouteSuggestion, ToolInfo, OptimizationCriteria } from './types.js';
+import { SequentialThinkingRequest, RouteSuggestion, ToolInfo, OptimizationCriteria } from '../types.js';
 
 export class SequentialThinkingIntegration {
   private isAvailable: boolean = false;

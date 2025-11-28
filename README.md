@@ -46,7 +46,7 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Enhanced Time Management**: Better timezone handling with proper DST detection
 - **Advanced Sequential Thinking**: Enhanced thought processing with branching and revision support
 - **Awesome Copilot Integration**: Direct access to curated development collections and instructions
-- **42 Prompts & 11 Resource Sets**: Comprehensive collection covering development, orchestration, MCP ecosystem workflows, monitoring, analytics, security, and compliance guidance
+- **40 Prompts & 11 Resource Sets**: Comprehensive collection covering development, orchestration, MCP ecosystem workflows, monitoring, analytics, security, and compliance guidance
 - **Intelligent Tool Guidance**: Structured guidance to help models effectively use available toolsets
 
 ## Prebuilt Prompts & Resource Sets
@@ -796,16 +796,42 @@ console.log('Tool chaining overview:', toolChainsOverview);
 ```
 src/
 ├── index.ts                           # Main entry point
-├── server.ts                          # MCP server implementation
-├── discovery.ts                       # Server discovery logic
-├── optimizer.ts                       # Route optimization algorithms
-├── sequential-integration.ts          # Sequential thinking integration
-├── sequential-thinking-manager.ts     # Sequential thinking processing
-├── time-manager.ts                    # Time and timezone management
-├── awesome-copilot-integration.ts     # Awesome Copilot integration
-├── prompt-manager.ts                  # Prebuilt prompts and resource sets
-├── schema-utils.ts                    # Schema utility functions
-└── types.ts                           # Type definitions and Zod schemas
+├── server.ts                          # Clean orchestrator (220 lines, fully modularized)
+├── types.ts                           # Type definitions and Zod schemas
+├── core/
+│   ├── discovery.ts                   # Server discovery logic
+│   └── optimizer.ts                   # Route optimization algorithms
+├── managers/
+│   ├── brainstorming-manager.ts       # Brainstorming functionality
+│   ├── sequential-thinking-manager.ts # Sequential thinking processing
+│   ├── workflow-orchestrator.ts       # Workflow orchestration
+│   ├── reliability-manager.ts         # System reliability management
+│   ├── time-manager.ts                # Time and timezone management
+│   └── memory-manager.ts              # Memory and knowledge management
+├── integrations/
+│   ├── awesome-copilot-integration.ts # Awesome Copilot integration
+│   └── sequential-integration.ts      # Sequential thinking integration
+├── prompts/
+│   └── prompt-manager.ts              # Prebuilt prompts and resource sets (40 prompts, 11 resource sets)
+├── config/
+│   ├── config-loader.ts               # Configuration loading utilities
+│   └── discovery-config.ts            # Discovery configuration
+├── utils/
+│   └── schema-utils.ts                # Schema utility functions
+├── handlers/
+│   └── request-handlers.ts            # Central tool execution dispatcher
+├── tools/
+│   ├── tool-registry.ts               # Tool definitions and listing (22 tools)
+│   ├── core-chaining-tools.ts         # Core chaining tool schemas (6 tools)
+│   ├── awesome-copilot-tools.ts       # Awesome Copilot tool schemas (6 tools)
+│   ├── sequential-thinking-tools.ts   # Sequential thinking tool schemas (2 tools)
+│   ├── time-management-tools.ts       # Time management tool schemas (2 tools)
+│   ├── prompt-resource-tools.ts       # Prompt/resource tool schemas (4 tools)
+│   └── validation-analysis-tools.ts   # Validation/analysis tool schemas (4 tools)
+└── resources/
+    ├── resource-registry.ts           # Resource definitions and handlers
+    ├── resource-definitions.ts        # Static resource metadata (13 resources)
+    └── resource-handlers.ts           # Dynamic resource content generation
 ```
 
 ### Building

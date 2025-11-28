@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { WorkflowStep, WorkflowOrchestratorInput } from './types.js';
+import { WorkflowStep, WorkflowOrchestratorInput } from '../types.js';
 
 export interface WorkflowExecutionResult {
   workflowId: string;

@@ -3,9 +3,9 @@ import { readFile, readdir, stat, access } from 'fs/promises';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { spawn, ChildProcess } from 'child_process';
-import { MCPServerInfo, ToolInfo, MCPServerInfoSchema } from './types.js';
-import { ConfigLoader } from './config-loader.js';
-import { DiscoveryConfig, EssentialServerConfig, FallbackToolConfig } from './discovery-config.js';
+import { MCPServerInfo, ToolInfo, MCPServerInfoSchema } from '../types.js';
+import { ConfigLoader } from '../config/config-loader.js';
+import { DiscoveryConfig, EssentialServerConfig, FallbackToolConfig } from '../config/discovery-config.js';
 
 export class MCPServerDiscovery {
   private servers: Map<string, MCPServerInfo> = new Map();

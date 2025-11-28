@@ -1,4 +1,4 @@
-import { ToolInfo, RouteSuggestion, OptimizationCriteria, SequentialThinkingRequest } from './types.js';
+import { ToolInfo, RouteSuggestion, OptimizationCriteria, SequentialThinkingRequest } from '../types.js';
 
 export class SmartRouteOptimizer {
   private tools: Map<string, ToolInfo> = new Map();

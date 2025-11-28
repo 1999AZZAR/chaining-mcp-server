@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AnalyzeWithSequentialThinkingSchema } from './types.js';
+import { AnalyzeWithSequentialThinkingSchema } from '../types.js';
 
 /**
  * Intelligent schema analyzer for dynamic JSON Schema generation

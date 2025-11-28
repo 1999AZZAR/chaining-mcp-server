@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BrainstormingInput } from './types.js';
+import { BrainstormingInput } from '../types.js';
 
 export interface BrainstormIdea {
   id: string;
