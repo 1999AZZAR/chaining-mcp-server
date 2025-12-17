@@ -95,25 +95,42 @@ export class RequestHandlers {
         };
 
       case 'generate_route_suggestions':
-        // Simplified for now - would need to implement proper route generation
+        const routes = await this.optimizer.generateRoutes(args.task, args.criteria || {});
         return {
-          routes: [],
-          message: 'Route generation not yet implemented in modular version',
+          routes: routes.map(route => ({
+            tools: route.tools,
+            estimatedDuration: route.estimatedDuration,
+            complexity: route.complexity,
+            confidence: route.confidence,
+            reasoning: route.reasoning,
+          })),
+          totalRoutes: routes.length,
         };
 
       case 'analyze_with_sequential_thinking':
-        // Simplified for now - would need to implement proper sequential thinking
+        const availableTools = this.discovery.getTools();
+        const analysis = await this.sequentialIntegration.analyzeWorkflow(
+          args.problem,
+          availableTools,
+          args.criteria || {}
+        );
         return {
-          analysis: {},
-          message: 'Sequential thinking analysis not yet implemented in modular version',
+          thoughts: analysis.thoughts,
+          analysis: analysis.analysis,
+          suggestions: analysis.suggestions.map(suggestion => ({
+            tools: suggestion.tools,
+            estimatedDuration: suggestion.estimatedDuration,
+            complexity: suggestion.complexity,
+            confidence: suggestion.confidence,
+            reasoning: suggestion.reasoning,
+          })),
+          confidence: analysis.confidence,
+          reasoning: analysis.reasoning,
         };
 
       case 'get_tool_chain_analysis':
-        // Simplified for now - would need to implement proper analysis
-        return {
-          analysis: {},
-          message: 'Tool chain analysis not yet implemented in modular version',
-        };
+        const toolChainAnalysis = this.optimizer.getToolChainAnalysis(args.input || '');
+        return toolChainAnalysis;
 
       case 'sequentialthinking':
         return await this.sequentialThinkingManager.processThought(args);
@@ -272,22 +289,250 @@ export class RequestHandlers {
     return null;
   }
 
+  private validateToolChain(
+    toolChain: any[],
+    availableTools: any[],
+    options: {
+      checkCircularDependencies?: boolean;
+      checkToolAvailability?: boolean;
+      checkParameterCompatibility?: boolean;
+    } = {}
+  ): {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+  } {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Check circular dependencies if requested
+    if (options.checkCircularDependencies !== false) {
+      const circularErrors = this.checkCircularDependencies(toolChain);
+      errors.push(...circularErrors);
+    }
+
+    // Check tool availability if requested
+    if (options.checkToolAvailability !== false) {
+      const availabilityErrors = this.checkToolAvailability(toolChain, availableTools);
+      errors.push(...availabilityErrors);
+    }
+
+    // Check parameter compatibility if requested
+    if (options.checkParameterCompatibility !== false) {
+      const compatibilityWarnings = this.checkParameterCompatibility(toolChain);
+      warnings.push(...compatibilityWarnings);
+    }
+
+    // Additional validation checks
+    const generalErrors = this.checkGeneralValidation(toolChain);
+    errors.push(...generalErrors);
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings,
+    };
+  }
+
+  private checkCircularDependencies(toolChain: any[]): string[] {
+    const errors: string[] = [];
+    const dependencyGraph: Record<string, string[]> = {};
+
+    // Build dependency graph
+    toolChain.forEach(step => {
+      if (step.dependsOn && Array.isArray(step.dependsOn)) {
+        dependencyGraph[step.id] = step.dependsOn;
+      } else {
+        dependencyGraph[step.id] = [];
+      }
+    });
+
+    // Check for cycles using DFS
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+
+    const hasCycle = (nodeId: string): boolean => {
+      if (recursionStack.has(nodeId)) {
+        return true; // Cycle detected
+      }
+      if (visited.has(nodeId)) {
+        return false; // Already processed
+      }
+
+      visited.add(nodeId);
+      recursionStack.add(nodeId);
+
+      const dependencies = dependencyGraph[nodeId] || [];
+      for (const dep of dependencies) {
+        if (hasCycle(dep)) {
+          errors.push(`Circular dependency detected: ${nodeId} -> ${dep}`);
+          return true;
+        }
+      }
+
+      recursionStack.delete(nodeId);
+      return false;
+    };
+
+    // Check all nodes for cycles
+    Object.keys(dependencyGraph).forEach(nodeId => {
+      if (!visited.has(nodeId)) {
+        hasCycle(nodeId);
+      }
+    });
+
+    return errors;
+  }
+
+  private checkToolAvailability(toolChain: any[], availableTools: any[]): string[] {
+    const errors: string[] = [];
+    const availableToolNames = new Set(availableTools.map(tool => tool.name));
+
+    toolChain.forEach(step => {
+      if (!availableToolNames.has(step.toolName)) {
+        errors.push(`Tool '${step.toolName}' is not available in server '${step.serverName}'`);
+      }
+    });
+
+    return errors;
+  }
+
+  private checkParameterCompatibility(toolChain: any[]): string[] {
+    const warnings: string[] = [];
+
+    toolChain.forEach((step, index) => {
+      const params = step.parameters || {};
+
+      // Check for common parameter compatibility issues
+      if (typeof params !== 'object') {
+        warnings.push(`Step ${step.id}: parameters should be an object`);
+      }
+
+      // Check for output mapping compatibility
+      if (step.outputMapping) {
+        Object.entries(step.outputMapping).forEach(([paramName, mapping]) => {
+          const [sourceStepId] = (mapping as string).split('.');
+          const sourceStep = toolChain.find(s => s.id === sourceStepId);
+
+          if (!sourceStep) {
+            warnings.push(`Step ${step.id}: output mapping references non-existent step '${sourceStepId}'`);
+          }
+        });
+      }
+
+      // Check dependency satisfaction
+      if (step.dependsOn && Array.isArray(step.dependsOn)) {
+        step.dependsOn.forEach((depId: string) => {
+          const depStep = toolChain.find(s => s.id === depId);
+          if (!depStep) {
+            warnings.push(`Step ${step.id}: depends on non-existent step '${depId}'`);
+          }
+        });
+      }
+    });
+
+    return warnings;
+  }
+
+  private checkGeneralValidation(toolChain: any[]): string[] {
+    const errors: string[] = [];
+
+    if (!Array.isArray(toolChain)) {
+      errors.push('Tool chain must be an array');
+      return errors;
+    }
+
+    if (toolChain.length === 0) {
+      errors.push('Tool chain cannot be empty');
+      return errors;
+    }
+
+    const stepIds = new Set<string>();
+
+    toolChain.forEach((step, index) => {
+      // Check required fields
+      if (!step.id) {
+        errors.push(`Step ${index}: missing required field 'id'`);
+      } else {
+        if (stepIds.has(step.id)) {
+          errors.push(`Step ${step.id}: duplicate step ID`);
+        }
+        stepIds.add(step.id);
+      }
+
+      if (!step.serverName) {
+        errors.push(`Step ${step.id || index}: missing required field 'serverName'`);
+      }
+
+      if (!step.toolName) {
+        errors.push(`Step ${step.id || index}: missing required field 'toolName'`);
+      }
+
+      // Check retry configuration
+      if (step.retryOnFailure && (step.maxRetries === undefined || step.maxRetries < 0)) {
+        errors.push(`Step ${step.id}: retryOnFailure is true but maxRetries is not set or invalid`);
+      }
+    });
+
+    return errors;
+  }
+
   private async handleSequentialThinkingTool(name: string, args: any): Promise<any> {
     switch (name) {
       case 'brainstorming':
-        // Simplified implementation for modular version
+        const brainstormingResult = await this.brainstormingManager.generateIdeas(args);
         return {
-          ideas: [],
-          evaluation: {},
-          message: 'Brainstorming not yet fully implemented in modular version',
+          topic: brainstormingResult.topic,
+          approach: brainstormingResult.approach,
+          ideas: brainstormingResult.ideas.map(idea => ({
+            id: idea.id,
+            content: idea.content,
+            category: idea.category,
+            feasibility: idea.feasibility,
+            innovation: idea.innovation,
+            effort: idea.effort,
+            pros: idea.pros,
+            cons: idea.cons,
+          })),
+          evaluation: brainstormingResult.evaluation ? {
+            topIdeas: brainstormingResult.evaluation.topIdeas.map(idea => ({
+              id: idea.id,
+              content: idea.content,
+              category: idea.category,
+              feasibility: idea.feasibility,
+              innovation: idea.innovation,
+              effort: idea.effort,
+            })),
+            recommendedApproach: brainstormingResult.evaluation.recommendedApproach,
+            considerations: brainstormingResult.evaluation.considerations,
+          } : undefined,
+          timestamp: brainstormingResult.timestamp,
+          metadata: brainstormingResult.metadata,
         };
 
       case 'workflow_orchestrator':
-        // Simplified implementation for modular version
+        const workflowResult = await this.workflowOrchestrator.executeWorkflow(args);
         return {
-          workflowId: args.workflowId,
-          status: 'completed',
-          message: 'Workflow orchestration not yet fully implemented in modular version',
+          workflowId: workflowResult.workflowId,
+          status: workflowResult.status,
+          steps: workflowResult.steps.map(step => ({
+            stepId: step.stepId,
+            status: step.status,
+            serverName: step.serverName,
+            toolName: step.toolName,
+            startedAt: step.startedAt,
+            completedAt: step.completedAt,
+            executionTime: step.executionTime,
+            result: step.result,
+            error: step.error,
+            retryCount: step.retryCount,
+            dependencies: step.dependencies,
+          })),
+          overallResult: workflowResult.overallResult,
+          executionTime: workflowResult.executionTime,
+          startedAt: workflowResult.startedAt,
+          completedAt: workflowResult.completedAt,
+          error: workflowResult.error,
         };
 
       default:
@@ -307,11 +552,21 @@ export class RequestHandlers {
         };
 
       case 'convert_time':
-        // Simplified implementation for modular version
+        const conversion = this.timeManager.convertTime(args.source_timezone, args.time, args.target_timezone);
         return {
-          source: { timezone: args.source_timezone, time: args.time },
-          target: { timezone: args.target_timezone, time: args.time }, // Simplified
-          difference: 0,
+          source: {
+            timezone: conversion.source.timezone,
+            datetime: conversion.source.datetime,
+            day_of_week: conversion.source.day_of_week,
+            is_dst: conversion.source.is_dst,
+          },
+          target: {
+            timezone: conversion.target.timezone,
+            datetime: conversion.target.datetime,
+            day_of_week: conversion.target.day_of_week,
+            is_dst: conversion.target.is_dst,
+          },
+          time_difference: conversion.time_difference,
         };
 
       default:
@@ -363,25 +618,229 @@ export class RequestHandlers {
   private async handleValidationAnalysisTool(name: string, args: any): Promise<any> {
     switch (name) {
       case 'validate_tool_chain':
-        // Simplified implementation for modular version
-        return {
-          valid: true,
-          errors: [],
-          warnings: [],
-          message: 'Tool chain validation not yet fully implemented in modular version',
-        };
+        const toolChain = args.toolChain || [];
+        const availableTools = this.discovery.getTools();
+
+        const validationResult = this.validateToolChain(toolChain, availableTools, args);
+        return validationResult;
 
       case 'analyze_tool_chain_performance':
-        // Simplified implementation for modular version
-        return {
-          metrics: {},
-          complexity: {},
-          suggestions: [],
-          message: 'Performance analysis not yet fully implemented in modular version',
-        };
+        const toolChainPerf = args.toolChain || [];
+        const performanceAnalysis = this.analyzeToolChainPerformance(toolChainPerf, args);
+        return performanceAnalysis;
 
       default:
         throw new Error(`Unknown validation/analysis tool: ${name}`);
     }
+  }
+
+  private analyzeToolChainPerformance(
+    toolChain: any[],
+    options: {
+      includeExecutionMetrics?: boolean;
+      includeComplexityAnalysis?: boolean;
+      includeOptimizationSuggestions?: boolean;
+    } = {}
+  ): {
+    metrics: {
+      totalEstimatedDuration: number;
+      averageComplexity: number;
+      bottleneckSteps: string[];
+      parallelizationPotential: number;
+    };
+    complexity: {
+      overallComplexity: number;
+      complexityDistribution: Record<string, number>;
+      riskFactors: string[];
+    };
+    suggestions: string[];
+  } {
+    const metrics = this.calculateExecutionMetrics(toolChain, options);
+    const complexity = this.analyzeComplexityMetrics(toolChain, options);
+    const suggestions = this.generateOptimizationSuggestions(toolChain, metrics, complexity, options);
+
+    return {
+      metrics,
+      complexity,
+      suggestions,
+    };
+  }
+
+  private calculateExecutionMetrics(
+    toolChain: any[],
+    options: any
+  ): {
+    totalEstimatedDuration: number;
+    averageComplexity: number;
+    bottleneckSteps: string[];
+    parallelizationPotential: number;
+  } {
+    if (!options.includeExecutionMetrics) {
+      return {
+        totalEstimatedDuration: 0,
+        averageComplexity: 0,
+        bottleneckSteps: [],
+        parallelizationPotential: 0,
+      };
+    }
+
+    let totalDuration = 0;
+    let totalComplexity = 0;
+    const stepDurations: Array<{ id: string; duration: number }> = [];
+    const stepComplexities: Array<{ id: string; complexity: number }> = [];
+
+    toolChain.forEach(step => {
+      const duration = step.estimatedDuration || step.duration || 1000;
+      const complexity = step.estimatedComplexity || step.complexity || 3;
+
+      totalDuration += duration;
+      totalComplexity += complexity;
+
+      stepDurations.push({ id: step.id, duration });
+      stepComplexities.push({ id: step.id, complexity });
+    });
+
+    // Identify bottleneck steps (top 20% slowest)
+    const sortedByDuration = [...stepDurations].sort((a, b) => b.duration - a.duration);
+    const bottleneckCount = Math.max(1, Math.ceil(sortedByDuration.length * 0.2));
+    const bottleneckSteps = sortedByDuration.slice(0, bottleneckCount).map(s => s.id);
+
+    // Calculate parallelization potential (steps that don't depend on each other)
+    const parallelizationPotential = this.calculateParallelizationPotential(toolChain);
+
+    return {
+      totalEstimatedDuration: totalDuration,
+      averageComplexity: totalComplexity / toolChain.length,
+      bottleneckSteps,
+      parallelizationPotential,
+    };
+  }
+
+  private analyzeComplexityMetrics(
+    toolChain: any[],
+    options: any
+  ): {
+    overallComplexity: number;
+    complexityDistribution: Record<string, number>;
+    riskFactors: string[];
+  } {
+    if (!options.includeComplexityAnalysis) {
+      return {
+        overallComplexity: 0,
+        complexityDistribution: {},
+        riskFactors: [],
+      };
+    }
+
+    const complexities = toolChain.map(step => step.estimatedComplexity || step.complexity || 3);
+    const overallComplexity = complexities.reduce((sum, c) => sum + c, 0) / complexities.length;
+
+    // Calculate complexity distribution
+    const complexityDistribution: Record<string, number> = {};
+    complexities.forEach(complexity => {
+      const level = complexity <= 2 ? 'low' : complexity <= 4 ? 'medium' : 'high';
+      complexityDistribution[level] = (complexityDistribution[level] || 0) + 1;
+    });
+
+    // Identify risk factors
+    const riskFactors: string[] = [];
+    if (overallComplexity > 4) {
+      riskFactors.push('High overall complexity may lead to execution failures');
+    }
+
+    const highComplexitySteps = toolChain.filter(step =>
+      (step.estimatedComplexity || step.complexity || 3) >= 5
+    );
+    if (highComplexitySteps.length > 0) {
+      riskFactors.push(`${highComplexitySteps.length} steps have high complexity and may be error-prone`);
+    }
+
+    const stepsWithRetries = toolChain.filter(step => step.retryOnFailure);
+    if (stepsWithRetries.length > toolChain.length * 0.3) {
+      riskFactors.push('High number of steps with retry logic may impact performance');
+    }
+
+    return {
+      overallComplexity,
+      complexityDistribution,
+      riskFactors,
+    };
+  }
+
+  private generateOptimizationSuggestions(
+    toolChain: any[],
+    metrics: any,
+    complexity: any,
+    options: any
+  ): string[] {
+    if (!options.includeOptimizationSuggestions) {
+      return [];
+    }
+
+    const suggestions: string[] = [];
+
+    // Duration-based suggestions
+    if (metrics.bottleneckSteps.length > 0) {
+      suggestions.push(`Optimize bottleneck steps: ${metrics.bottleneckSteps.join(', ')}`);
+    }
+
+    if (metrics.totalEstimatedDuration > 10000) {
+      suggestions.push('Consider breaking down the tool chain into smaller, parallel workflows');
+    }
+
+    // Complexity-based suggestions
+    if (complexity.overallComplexity > 4) {
+      suggestions.push('Consider replacing high-complexity steps with simpler alternatives');
+    }
+
+    if (complexity.complexityDistribution.high > toolChain.length * 0.5) {
+      suggestions.push('High proportion of complex steps - consider simplifying the workflow');
+    }
+
+    // Parallelization suggestions
+    if (metrics.parallelizationPotential > 0.5) {
+      suggestions.push(`High parallelization potential (${Math.round(metrics.parallelizationPotential * 100)}%) - consider running independent steps in parallel`);
+    }
+
+    // Dependency optimization
+    const stepsWithMultipleDeps = toolChain.filter(step =>
+      step.dependsOn && step.dependsOn.length > 2
+    );
+    if (stepsWithMultipleDeps.length > 0) {
+      suggestions.push('Consider reducing dependency chains to improve execution flow');
+    }
+
+    // General suggestions
+    suggestions.push('Monitor execution times and adjust duration estimates based on real performance');
+    suggestions.push('Consider implementing circuit breakers for frequently failing steps');
+    suggestions.push('Add timeout configurations for long-running operations');
+
+    return suggestions;
+  }
+
+  private calculateParallelizationPotential(toolChain: any[]): number {
+    if (toolChain.length <= 1) return 0;
+
+    // Build dependency graph
+    const dependencyMap: Record<string, string[]> = {};
+    toolChain.forEach(step => {
+      dependencyMap[step.id] = step.dependsOn || [];
+    });
+
+    // Calculate maximum parallelization
+    // This is a simplified calculation - in practice, you'd need more sophisticated analysis
+    let independentSteps = 0;
+    const processed = new Set<string>();
+
+    // Count steps that can run in parallel (no dependencies or dependencies already processed)
+    toolChain.forEach(step => {
+      const deps = dependencyMap[step.id];
+      if (deps.length === 0 || deps.every((dep: string) => processed.has(dep))) {
+        independentSteps++;
+        processed.add(step.id);
+      }
+    });
+
+    return independentSteps / toolChain.length;
   }
 }

@@ -1012,8 +1012,165 @@ export class SmartRouteOptimizer {
     // Boost creative and innovative solutions
     score += this.adaptiveWeights.creativity * 0.1;
     score += this.adaptiveWeights.innovation * 0.1;
-    
+
     return score;
+  }
+
+  /**
+   * Get comprehensive tool chain analysis
+   */
+  getToolChainAnalysis(input: string): {
+    totalTools: number;
+    averageComplexity: number;
+    categoryDistribution: Record<string, number>;
+    routeRecommendations: RouteSuggestion[];
+    optimizationSuggestions: string[];
+  } {
+    const tools = Array.from(this.tools.values());
+    const totalTools = tools.length;
+
+    // Calculate average complexity
+    const averageComplexity = tools.length > 0
+      ? tools.reduce((sum, tool) => sum + (tool.estimatedComplexity || 1), 0) / tools.length
+      : 0;
+
+    // Calculate category distribution
+    const categoryDistribution: Record<string, number> = {};
+    tools.forEach(tool => {
+      const category = tool.category || 'uncategorized';
+      categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
+    });
+
+    // Generate route recommendations based on input
+    const routeRecommendations = this.generateRouteRecommendations(input);
+
+    // Generate optimization suggestions
+    const optimizationSuggestions = this.generateOptimizationSuggestions(tools, averageComplexity);
+
+    return {
+      totalTools,
+      averageComplexity: Math.round(averageComplexity * 100) / 100,
+      categoryDistribution,
+      routeRecommendations,
+      optimizationSuggestions,
+    };
+  }
+
+  /**
+   * Generate route recommendations based on input description
+   */
+  private generateRouteRecommendations(input: string): RouteSuggestion[] {
+    // Generate a few sample route recommendations based on input
+    const recommendations: RouteSuggestion[] = [];
+
+    if (input.toLowerCase().includes('file') || input.toLowerCase().includes('read') || input.toLowerCase().includes('write')) {
+      recommendations.push({
+        id: 'file-operations-route',
+        name: 'File Operations Route',
+        description: 'Optimized route for file operations using filesystem tools',
+        tools: [
+          {
+            name: 'read_file',
+            description: 'Read file contents',
+            inputSchema: { type: 'object', properties: { path: { type: 'string' } } },
+            serverName: 'filesystem',
+            category: 'filesystem',
+            estimatedComplexity: 2,
+            estimatedDuration: 100,
+          },
+          {
+            name: 'write_file',
+            description: 'Write content to file',
+            inputSchema: { type: 'object', properties: { path: { type: 'string' }, content: { type: 'string' } } },
+            serverName: 'filesystem',
+            category: 'filesystem',
+            estimatedComplexity: 3,
+            estimatedDuration: 200,
+          }
+        ],
+        estimatedDuration: 300,
+        complexity: 2.5,
+        confidence: 0.85,
+        reasoning: 'File operations typically require read/write capabilities with proper error handling',
+      });
+    }
+
+    if (input.toLowerCase().includes('search') || input.toLowerCase().includes('web') || input.toLowerCase().includes('find')) {
+      recommendations.push({
+        id: 'web-search-route',
+        name: 'Web Search Route',
+        description: 'Optimized route for web search and information gathering',
+        tools: [
+          {
+            name: 'web_search',
+            description: 'Search the web for information',
+            inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+            serverName: 'search',
+            category: 'web',
+            estimatedComplexity: 4,
+            estimatedDuration: 2000,
+          }
+        ],
+        estimatedDuration: 2000,
+        complexity: 4,
+        confidence: 0.75,
+        reasoning: 'Web search operations require robust querying and result processing capabilities',
+      });
+    }
+
+    // Add a general-purpose route
+    recommendations.push({
+      id: 'general-purpose-route',
+      name: 'General Purpose Route',
+      description: 'Balanced route suitable for most common tasks',
+      tools: [
+        {
+          name: 'analyze_tools',
+          description: 'Analyze available tools and capabilities',
+          inputSchema: {},
+          serverName: 'chaining',
+          category: 'analysis',
+          estimatedComplexity: 3,
+          estimatedDuration: 500,
+        }
+      ],
+      estimatedDuration: 500,
+      complexity: 3,
+      confidence: 0.9,
+      reasoning: 'General purpose route provides flexibility and can be adapted to various task types',
+    });
+
+    return recommendations;
+  }
+
+  /**
+   * Generate optimization suggestions based on tool analysis
+   */
+  private generateOptimizationSuggestions(tools: ToolInfo[], averageComplexity: number): string[] {
+    const suggestions: string[] = [];
+
+    if (averageComplexity > 4) {
+      suggestions.push('Consider adding simpler utility tools to reduce overall complexity');
+    }
+
+    if (tools.length < 5) {
+      suggestions.push('Expand tool collection to provide more comprehensive coverage');
+    }
+
+    const categories = new Set(tools.map(t => t.category));
+    if (categories.size < 3) {
+      suggestions.push('Add tools from additional categories for better problem-solving coverage');
+    }
+
+    const slowTools = tools.filter(t => (t.estimatedDuration || 0) > 3000);
+    if (slowTools.length > 0) {
+      suggestions.push(`Consider optimizing or replacing ${slowTools.length} slow-performing tools`);
+    }
+
+    suggestions.push('Regularly update tool performance metrics based on actual usage patterns');
+    suggestions.push('Implement tool usage analytics to identify bottlenecks and optimization opportunities');
+
+    return suggestions;
   }
 }
 
