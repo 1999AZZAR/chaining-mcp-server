@@ -1,6 +1,48 @@
 # Enterprise Chaining MCP Server
 
-A refined and unified Model Context Protocol (MCP) server that combines intelligent tool chaining, route optimization, sequential thinking, time management, development guidance, monitoring, analytics, security, and compliance capabilities. This server discovers available MCP servers on your system, analyzes their tools, validates tool chains, and provides a complete enterprise-grade toolkit for complex task execution with awesome-copilot integration.
+A refined and unified Model Context Protocol (MCP) server that combines intelligent tool chaining, route optimization, sequential thinking, time management, development guidance, monitoring, analytics, security, and compliance capabilities. This server discovers available MCP servers on your system, analyzes their tools, validates tool chains, and provides a complete enterprise-grade toolkit for complex task execution with real awesome-copilot MCP server integration.
+
+## Table of Contents
+
+- [Features](#features)
+  - [Core Chaining Capabilities](#core-chaining-capabilities)
+  - [Awesome Copilot Integration](#awesome-copilot-integration)
+  - [Advanced Thinking Capabilities](#advanced-thinking-capabilities)
+  - [Time Management](#time-management)
+  - [Enterprise Capabilities](#enterprise-capabilities)
+  - [Technical Features](#technical-features)
+- [Prebuilt Prompts & Resource Sets](#prebuilt-prompts--resource-sets)
+  - [Prebuilt Prompts](#prebuilt-prompts)
+  - [Resource Sets](#resource-sets)
+  - [Tool Chain Verification Examples](#tool-chain-verification-examples)
+  - [Benefits for Models](#benefits-for-models)
+- [Installation](#installation)
+- [Available Tools](#available-tools)
+- [Available Resources](#available-resources)
+- [Usage Examples](#usage-examples)
+  - [Basic Server Discovery](#basic-server-discovery)
+  - [Tool Analysis](#tool-analysis)
+  - [Route Generation](#route-generation)
+  - [Sequential Thinking Analysis](#sequential-thinking-analysis)
+  - [Awesome Copilot Integration](#awesome-copilot-integration-1)
+  - [Sequential Thinking](#sequential-thinking)
+  - [Brainstorming](#brainstorming)
+  - [Workflow Orchestration](#workflow-orchestration)
+  - [Time Management](#time-management-1)
+  - [Prebuilt Prompts & Resources](#prebuilt-prompts--resources)
+  - [Accessing Resources](#accessing-resources)
+- [Environment Variables](#environment-variables)
+- [Development](#development)
+  - [Project Structure](#project-structure)
+  - [Building](#building)
+  - [Testing](#testing)
+- [Integration with Other MCP Servers](#integration-with-other-mcp-servers)
+  - [Sequential Thinking MCP Integration](#sequential-thinking-mcp-integration)
+  - [Awesome Copilot Integration](#awesome-copilot-integration-2)
+  - [Project-Guardian Integration](#project-guardian-integration)
+- [License](#license)
+- [Contributing](#contributing)
+- [Support](#support)
 
 ## Features
 
@@ -15,10 +57,10 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 
 ### Awesome Copilot Integration
 
-- **Collections Access**: Browse and search development collections (TypeScript, Python, React, etc.)
-- **Instructions Loading**: Access detailed development instructions and guides
-- **Smart Caching**: Efficient storage and retrieval of development resources
-- **Expert Guidance**: Direct access to curated development knowledge and best practices
+- **Real MCP Server Integration**: Direct communication with the official awesome-copilot MCP server
+- **GitHub API Access**: Seamless access to GitHub-hosted development resources and instructions
+- **Token-Based Authentication**: Secure access using GitHub Personal Access Tokens
+- **Live Data**: Always up-to-date content from the awesome-copilot repository
 
 ### Advanced Thinking Capabilities
 
@@ -238,7 +280,8 @@ Add the chaining MCP server to your MCP client configuration:
       "env": {
         "SEQUENTIAL_THINKING_AVAILABLE": "true",
         "AWESOME_COPILOT_ENABLED": "true",
-        "RELIABILITY_MONITORING_ENABLED": "true"
+        "RELIABILITY_MONITORING_ENABLED": "true",
+        "GITHUB_TOKEN": "your_github_token_here"
       }
     }
   }
@@ -246,6 +289,8 @@ Add the chaining MCP server to your MCP client configuration:
 ```
 
 **Note:** Replace `/path/to/chaining-mcp-server` with your actual path to the chaining-mcp-server directory.
+
+**Important:** Set `GITHUB_TOKEN` to a valid GitHub Personal Access Token to use awesome-copilot tools. Get a token from https://github.com/settings/tokens.
 
 ## Available Tools
 
@@ -316,66 +361,30 @@ Gets comprehensive analysis of available tools and suggested routes.
 
 ### Awesome Copilot Tools
 
-#### 6. `awesome_copilot_list_collections`
+#### 6. `search_instructions`
 
-List all available awesome-copilot collections.
-
-**Input**: None
-
-**Output**: JSON object containing collections with their metadata and items.
-
-#### 7. `awesome_copilot_search_collections`
-
-Search awesome-copilot collections by keywords.
+Searches custom instructions based on keywords in their descriptions.
 
 **Input**:
 
-- `query` (required): Search query to match against collection names, descriptions, or tags
+- `keywords` (required): Keywords to search for in instruction descriptions
 
-**Output**: JSON object with matching collections and their metadata.
+**Output**: JSON object with matching instructions and their metadata. Requires GITHUB_TOKEN environment variable to be configured.
 
-#### 8. `awesome_copilot_get_collection`
+#### 7. `load_instruction`
 
-Get a specific awesome-copilot collection by ID.
-
-**Input**:
-
-- `id` (required): The collection ID to retrieve
-
-**Output**: JSON object containing the complete collection with all its items.
-
-#### 9. `awesome_copilot_search_instructions`
-
-Search awesome-copilot instructions by keywords.
+Loads a custom instruction from the repository.
 
 **Input**:
 
-- `keywords` (required): Keywords to search for in instruction titles, descriptions, or tags
+- `mode` (required): Instruction mode (instructions, prompts, chatmodes)
+- `filename` (required): Filename of the instruction to load
 
-**Output**: JSON object with matching instructions and their metadata.
-
-#### 10. `awesome_copilot_load_instruction`
-
-Load a specific awesome-copilot instruction.
-
-**Input**:
-
-- `mode` (required): The instruction mode (e.g., "instructions", "prompts")
-- `filename` (required): The filename of the instruction to load
-
-**Output**: JSON object containing the instruction content and metadata.
-
-#### 11. `awesome_copilot_get_integration_status`
-
-Get the status of awesome-copilot integration.
-
-**Input**: None
-
-**Output**: JSON object with integration status, collections count, and last update time.
+**Output**: JSON object containing the instruction content and metadata. Requires GITHUB_TOKEN environment variable to be configured.
 
 ### Sequential Thinking Tool
 
-#### 12. `sequentialthinking`
+#### 8. `sequentialthinking`
 
 A detailed tool for dynamic and reflective problem-solving through thoughts.
 
@@ -393,7 +402,7 @@ A detailed tool for dynamic and reflective problem-solving through thoughts.
 
 **Output**: JSON object with thought processing results and metadata.
 
-#### 13. `brainstorming`
+#### 9. `brainstorming`
 
 Generate creative ideas and solutions for problems using different brainstorming approaches.
 
@@ -415,7 +424,7 @@ Generate creative ideas and solutions for problems using different brainstorming
 - `practical`: Realistic and implementable solutions
 - `innovative`: Cutting-edge approaches combining multiple perspectives
 
-#### 14. `workflow_orchestrator`
+#### 10. `workflow_orchestrator`
 
 Execute complex multi-server workflows across the MCP ecosystem with dependency management and error handling.
 
@@ -450,7 +459,7 @@ Execute complex multi-server workflows across the MCP ecosystem with dependency 
 
 ### Time Management Tools
 
-#### 17. `get_current_time`
+#### 11. `get_current_time`
 
 Get current time in a specific timezone.
 
@@ -460,7 +469,7 @@ Get current time in a specific timezone.
 
 **Output**: JSON object with timezone, datetime, day of week, and DST status.
 
-#### 18. `convert_time`
+#### 12. `convert_time`
 
 Convert time between timezones.
 
@@ -472,7 +481,7 @@ Convert time between timezones.
 
 **Output**: JSON object with source and target times, plus time difference.
 
-#### 19. `get_prompt`
+#### 13. `get_prompt`
 
 Get a specific prebuilt prompt by ID.
 
@@ -482,7 +491,7 @@ Get a specific prebuilt prompt by ID.
 
 **Output**: JSON object containing the complete prompt with its content and metadata.
 
-#### 20. `search_prompts`
+#### 14. `search_prompts`
 
 Search for prompts by keywords, category, or tags.
 
@@ -494,7 +503,7 @@ Search for prompts by keywords, category, or tags.
 
 **Output**: JSON object with matching prompts and their metadata.
 
-#### 21. `get_resource_set`
+#### 15. `get_resource_set`
 
 Get a specific resource set by ID.
 
@@ -504,7 +513,7 @@ Get a specific resource set by ID.
 
 **Output**: JSON object containing the complete resource set with all its resources.
 
-#### 22. `search_resource_sets`
+#### 16. `search_resource_sets`
 
 Search for resource sets by keywords, category, or tags.
 
@@ -516,7 +525,7 @@ Search for resource sets by keywords, category, or tags.
 
 **Output**: JSON object with matching resource sets and their metadata.
 
-#### 23. `validate_tool_chain`
+#### 17. `validate_tool_chain`
 
 Validate tool chains for correctness, dependencies, and potential issues. Checks for circular dependencies, tool availability, and parameter compatibility.
 
@@ -529,7 +538,7 @@ Validate tool chains for correctness, dependencies, and potential issues. Checks
 
 **Output**: JSON object with validation results including errors, warnings, and overall validity status.
 
-#### 24. `analyze_tool_chain_performance`
+#### 18. `analyze_tool_chain_performance`
 
 Analyze performance metrics and efficiency of tool chains. Provides execution time estimates, complexity analysis, and optimization suggestions.
 
@@ -648,29 +657,19 @@ console.log(analysis);
 ### Awesome Copilot Integration
 
 ```javascript
-// List all available collections
-const collections = await mcpClient.callTool('awesome_copilot_list_collections', {});
-
-// Search for TypeScript-related collections
-const tsCollections = await mcpClient.callTool('awesome_copilot_search_collections', {
-  query: 'typescript'
-});
-
-// Get a specific collection
-const collection = await mcpClient.callTool('awesome_copilot_get_collection', {
-  id: 'typescript-mcp-development'
-});
-
 // Search for development instructions
-const instructions = await mcpClient.callTool('awesome_copilot_search_instructions', {
+const instructions = await mcpClient.callTool('search_instructions', {
   keywords: 'mcp server'
 });
 
 // Load a specific instruction
-const instruction = await mcpClient.callTool('awesome_copilot_load_instruction', {
+const instruction = await mcpClient.callTool('load_instruction', {
   mode: 'instructions',
   filename: 'typescript-mcp-server.instructions.md'
 });
+
+// Note: These tools require GITHUB_TOKEN environment variable to be configured
+// Get a token from https://github.com/settings/tokens and set it in your environment
 ```
 
 ### Sequential Thinking
@@ -869,6 +868,7 @@ console.log('Tool chaining overview:', toolChainsOverview);
 - `MCP_SERVERS`: JSON string containing additional MCP server configurations
 - `DISABLE_THOUGHT_LOGGING`: Set to 'true' to disable sequential thinking thought logging
 - `AWESOME_COPILOT_ENABLED`: Set to 'false' to disable awesome-copilot integration
+- `GITHUB_TOKEN`: GitHub Personal Access Token required for awesome-copilot tools (get from https://github.com/settings/tokens)
 
 ## Development
 
@@ -904,13 +904,13 @@ src/
 ├── handlers/
 │   └── request-handlers.ts            # Central tool execution dispatcher
 ├── tools/
-│   ├── tool-registry.ts               # Tool definitions and listing (22 tools)
+│   ├── tool-registry.ts               # Tool definitions and listing (18 tools)
 │   ├── core-chaining-tools.ts         # Core chaining tool schemas (6 tools)
-│   ├── awesome-copilot-tools.ts       # Awesome Copilot tool schemas (6 tools)
+│   ├── awesome-copilot-tools.ts       # Awesome Copilot tool schemas (2 tools)
 │   ├── sequential-thinking-tools.ts   # Sequential thinking tool schemas (2 tools)
 │   ├── time-management-tools.ts       # Time management tool schemas (2 tools)
 │   ├── prompt-resource-tools.ts       # Prompt/resource tool schemas (4 tools)
-│   └── validation-analysis-tools.ts   # Validation/analysis tool schemas (4 tools)
+│   └── validation-analysis-tools.ts   # Validation/analysis tool schemas (2 tools)
 └── resources/
     ├── resource-registry.ts           # Resource definitions and handlers
     ├── resource-definitions.ts        # Static resource metadata (13 resources)
@@ -948,12 +948,12 @@ When the sequential thinking MCP server is available, the chaining server can:
 
 ### Awesome Copilot Integration
 
-The server integrates with awesome-copilot to provide:
+The server integrates with the official awesome-copilot MCP server to provide:
 
-1. Access to curated development collections and instructions
-2. Expert guidance for various programming languages and frameworks
-3. Best practices and development workflows
-4. Structured learning resources for different skill levels
+1. Real-time access to GitHub-hosted development instructions and prompts
+2. Direct communication with the awesome-copilot repository via MCP protocol
+3. Secure authentication using GitHub Personal Access Tokens
+4. Live updates from the awesome-copilot community resources
 
 ### Project-Guardian Integration
 

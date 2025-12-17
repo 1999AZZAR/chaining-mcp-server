@@ -1,3 +1,4 @@
+import { spawn } from 'child_process';
 import { MCPServerDiscovery } from '../core/discovery.js';
 import { SmartRouteOptimizer } from '../core/optimizer.js';
 import { SequentialThinkingIntegration } from '../integrations/sequential-integration.js';
@@ -28,8 +29,8 @@ export class RequestHandlers {
         return await this.handleCoreChainingTool(name, args);
       }
 
-      // Awesome Copilot Tools
-      if (['awesome_copilot_list_collections', 'awesome_copilot_search_collections', 'awesome_copilot_get_collection', 'awesome_copilot_search_instructions', 'awesome_copilot_load_instruction', 'awesome_copilot_get_integration_status'].includes(name)) {
+      // Route Awesome Copilot Tools to discovered server
+      if (['search_instructions', 'load_instruction'].includes(name)) {
         return await this.handleAwesomeCopilotTool(name, args);
       }
 
@@ -123,63 +124,152 @@ export class RequestHandlers {
   }
 
   private async handleAwesomeCopilotTool(name: string, args: any): Promise<any> {
-    switch (name) {
-      case 'awesome_copilot_list_collections':
-        const collections = this.awesomeCopilotIntegration.getCollections();
-        return {
-          collections: collections.map(c => ({
-            name: c.name,
-            description: c.description,
-            items: c.items?.length || 0,
-          })),
-          total: collections.length,
-        };
+    // Find the awesome-copilot server
+    const awesomeCopilotServer = this.discovery.getServers().find(server => server.name === 'awesome-copilot');
 
-      case 'awesome_copilot_search_collections':
-        const searchResults = this.awesomeCopilotIntegration.searchCollections(args.query);
-        return {
-          collections: searchResults.map(c => ({
-            name: c.name,
-            description: c.description,
-            items: c.items?.length || 0,
-          })),
-          total: searchResults.length,
-        };
-
-      case 'awesome_copilot_get_collection':
-        const collections2 = this.awesomeCopilotIntegration.getCollections();
-        const collection = collections2.find(c => c.name === args.id);
-        return collection || { error: 'Collection not found' };
-
-      case 'awesome_copilot_search_instructions':
-        const instructions = this.awesomeCopilotIntegration.searchInstructions(args.keywords);
-        return {
-          instructions: instructions.map(i => ({
-            filename: i.filename,
-            mode: (i as any).mode || 'unknown',
-            description: (i as any).description || 'No description',
-          })),
-          total: instructions.length,
-        };
-
-      case 'awesome_copilot_load_instruction':
-        const allInstructions = this.awesomeCopilotIntegration.getInstructions();
-        const instruction = allInstructions.find(i => i.filename === args.filename && i.mode === args.mode);
-        return instruction || { error: 'Instruction not found' };
-
-      case 'awesome_copilot_get_integration_status':
-        const collections3 = this.awesomeCopilotIntegration.getCollections();
-        const instructions2 = this.awesomeCopilotIntegration.getInstructions();
-        return {
-          collectionsCount: collections3.length,
-          instructionsCount: instructions2.length,
-          lastUpdate: new Date().toISOString(),
-          status: 'active',
-        };
-
-      default:
-        throw new Error(`Unknown awesome copilot tool: ${name}`);
+    if (!awesomeCopilotServer) {
+      return {
+        error: 'Awesome Copilot MCP server not configured',
+        message: 'The awesome-copilot MCP server is not available. Make sure GITHUB_TOKEN is set and the server is properly configured.',
+        tool: name,
+        args: args
+      };
     }
+
+    // Check if GitHub token is available
+    const githubToken = awesomeCopilotServer.env?.GITHUB__TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB__TOKEN;
+    if (!githubToken || githubToken === 'your_github_token_here') {
+      return {
+        error: 'GitHub token not configured',
+        message: 'GITHUB_TOKEN environment variable is required to use awesome-copilot tools. Please set it to a valid GitHub Personal Access Token.',
+        tool: name,
+        args: args,
+        setup_instructions: 'Get a token from https://github.com/settings/tokens and set GITHUB_TOKEN environment variable.'
+      };
+    }
+
+    // Route the call to the awesome-copilot server by spawning it and communicating via MCP protocol
+    try {
+      const result = await this.executeAwesomeCopilotTool(awesomeCopilotServer, name, args);
+      return result;
+    } catch (error) {
+      console.error(`Failed to execute awesome-copilot tool ${name}:`, error);
+      return {
+        error: 'Awesome Copilot tool execution failed',
+        message: `Failed to execute ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        tool: name,
+        args: args,
+        suggestion: 'Make sure the awesome-copilot MCP server is properly built and the GitHub token has the necessary permissions.'
+      };
+    }
+  }
+
+  private async executeAwesomeCopilotTool(serverInfo: any, toolName: string, args: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`Timeout executing tool ${toolName} on awesome-copilot server`));
+      }, 30000); // 30 second timeout
+
+      try {
+        const child = spawn(serverInfo.command, serverInfo.args, {
+          env: { ...process.env, ...serverInfo.env },
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+
+        let output = '';
+        let errorOutput = '';
+
+        child.stdout?.on('data', (data) => {
+          output += data.toString();
+        });
+
+        child.stderr?.on('data', (data) => {
+          errorOutput += data.toString();
+        });
+
+        child.on('error', (error) => {
+          clearTimeout(timeout);
+          reject(new Error(`Failed to spawn awesome-copilot server: ${error.message}`));
+        });
+
+        child.on('close', (code) => {
+          clearTimeout(timeout);
+          if (code !== 0) {
+            reject(new Error(`Awesome-copilot server exited with code ${code}: ${errorOutput}`));
+            return;
+          }
+
+          try {
+            // Parse the MCP response
+            const response = this.parseAwesomeCopilotResponse(output);
+            if (response && response.result && response.result.content) {
+              // Extract the actual tool result from the MCP response
+              const content = response.result.content[0];
+              if (content && content.type === 'text') {
+                const result = JSON.parse(content.text);
+                resolve(result);
+              } else {
+                resolve(response.result);
+              }
+            } else {
+              resolve({ message: 'Tool executed successfully but no result returned' });
+            }
+          } catch (parseError) {
+            reject(new Error(`Failed to parse response from awesome-copilot server: ${parseError instanceof Error ? parseError.message : String(parseError)}`));
+          }
+        });
+
+        // Send MCP initialize request first
+        const initRequest = {
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2024-11-05',
+            capabilities: {},
+            clientInfo: { name: 'chaining-mcp-server', version: '1.0.0' }
+          }
+        };
+
+        child.stdin?.write(JSON.stringify(initRequest) + '\n');
+
+        // Wait a bit for initialization, then send the tool call
+        setTimeout(() => {
+          const toolRequest = {
+            jsonrpc: '2.0',
+            id: 2,
+            method: 'tools/call',
+            params: {
+              name: toolName,
+              arguments: args
+            }
+          };
+
+          child.stdin?.write(JSON.stringify(toolRequest) + '\n');
+          child.stdin?.end();
+        }, 1000);
+
+      } catch (error) {
+        clearTimeout(timeout);
+        reject(new Error(`Failed to execute tool on awesome-copilot server: ${error instanceof Error ? error.message : String(error)}`));
+      }
+    });
+  }
+
+  private parseAwesomeCopilotResponse(output: string): any {
+    const lines = output.split('\n').filter(line => line.trim());
+    for (const line of lines) {
+      try {
+        const response = JSON.parse(line);
+        if (response.id === 2 && response.result) { // Our tool call response
+          return response;
+        }
+      } catch (error) {
+        // Skip invalid JSON lines
+        continue;
+      }
+    }
+    return null;
   }
 
   private async handleSequentialThinkingTool(name: string, args: any): Promise<any> {

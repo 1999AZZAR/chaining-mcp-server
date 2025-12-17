@@ -77,6 +77,21 @@ export const defaultDiscoveryConfig: DiscoveryConfig = {
         resources: false,
         prompts: false
       }
+    },
+    {
+      name: 'awesome-copilot',
+      command: 'dotnet',
+      args: ['/tmp/awesome-copilot-mcp/src/McpSamples.AwesomeCopilot.HybridApp/bin/Debug/net9.0/McpSamples.AwesomeCopilot.HybridApp.dll'],
+      env: {
+        GITHUB__TOKEN: process.env.GITHUB_TOKEN || process.env.GITHUB__TOKEN || ''
+      },
+      description: 'Awesome Copilot MCP server for accessing GitHub Copilot customizations',
+      version: '1.0.0',
+      capabilities: {
+        tools: true,
+        resources: false,
+        prompts: true
+      }
     }
   ],
 
@@ -264,6 +279,40 @@ export const defaultDiscoveryConfig: DiscoveryConfig = {
           category: 'analysis',
           estimatedComplexity: 5,
           estimatedDuration: 2000,
+        }
+      ]
+    },
+    {
+      serverPattern: 'awesome-copilot',
+      tools: [
+        {
+          name: 'search_instructions',
+          description: 'Searches custom instructions based on keywords in their descriptions',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              keywords: { type: 'string', description: 'Keywords to search for in instruction descriptions' }
+            },
+            required: ['keywords']
+          },
+          category: 'knowledge',
+          estimatedComplexity: 3,
+          estimatedDuration: 1500,
+        },
+        {
+          name: 'load_instruction',
+          description: 'Loads a custom instruction from the repository',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              mode: { type: 'string', description: 'Instruction mode (instructions, prompts, chatmodes)' },
+              filename: { type: 'string', description: 'Filename of the instruction to load' }
+            },
+            required: ['mode', 'filename']
+          },
+          category: 'knowledge',
+          estimatedComplexity: 3,
+          estimatedDuration: 1000,
         }
       ]
     }
