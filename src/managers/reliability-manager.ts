@@ -110,7 +110,7 @@ export class ReliabilityManager {
           this.retryConfig.maxDelay
         );
 
-        console.log(`Retrying ${toolName} in ${delay}ms...`);
+        console.error(`Retrying ${toolName} in ${delay}ms...`);
         await this.delay(delay);
       }
     }

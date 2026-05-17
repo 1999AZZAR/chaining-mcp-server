@@ -213,7 +213,7 @@ export class WorkflowOrchestrator {
     // 3. Call the tool with the provided parameters
     // 4. Return the result
 
-    console.log(`Executing ${toolName} on ${serverName} with parameters:`, parameters);
+    console.error(`Executing ${toolName} on ${serverName} with parameters:`, parameters);
 
     // Simulate execution time
     await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));

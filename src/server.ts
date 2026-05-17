@@ -5,7 +5,6 @@ import {
   ListToolsRequestSchema,
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
-  InitializeRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { MCPServerDiscovery } from './core/discovery.js';
@@ -89,29 +88,6 @@ export class ChainingMCPServer {
   }
 
   private setupHandlers(): void {
-    // Initialize handler
-    this.server.setRequestHandler(InitializeRequestSchema, async (request) => {
-      const { protocolVersion, capabilities, clientInfo } = request.params;
-
-      console.error(`Initializing chaining-mcp-server with protocol version ${protocolVersion}`);
-
-      // Return server capabilities
-      return {
-        protocolVersion,
-        capabilities: {
-          tools: {
-            listChanged: true,
-          },
-          resources: {},
-        },
-        serverInfo: {
-          name: 'chaining-mcp-server',
-          version: '1.0.0',
-          description: 'Comprehensive MCP server with intelligent tool chaining, route optimization, persistent memory, sequential thinking, and time management',
-        },
-      };
-    });
-
     // List tools handler
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {

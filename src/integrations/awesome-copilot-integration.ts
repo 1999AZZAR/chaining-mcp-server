@@ -50,7 +50,7 @@ export class AwesomeCopilotIntegration {
    */
   private async initialize(): Promise<void> {
     try {
-      console.log('Initializing awesome-copilot integration...');
+      console.error('Initializing awesome-copilot integration...');
 
       // Load collections (this would normally call the awesome-copilot MCP server)
       await this.loadCollections();
@@ -59,7 +59,7 @@ export class AwesomeCopilotIntegration {
       await this.loadInstructions();
 
       this.isInitialized = true;
-      console.log('Awesome-copilot integration initialized successfully');
+      console.error('Awesome-copilot integration initialized successfully');
     } catch (error) {
       console.error('Failed to initialize awesome-copilot integration:', error);
       // Continue with partial functionality if integration fails
@@ -116,7 +116,7 @@ export class AwesomeCopilotIntegration {
         this.collections.set(collection.id, collection);
       });
 
-      console.log(`Loaded ${mockCollections.length} collections from awesome-copilot`);
+      console.error(`Loaded ${mockCollections.length} collections from awesome-copilot`);
     } catch (error) {
       console.error('Failed to load collections:', error);
       throw error;
@@ -190,7 +190,7 @@ This guide covers building Model Context Protocol (MCP) servers using Python and
         this.instructions.set(`${instruction.mode}/${instruction.filename}`, instruction);
       });
 
-      console.log(`Loaded ${mockInstructions.length} instructions from awesome-copilot`);
+      console.error(`Loaded ${mockInstructions.length} instructions from awesome-copilot`);
     } catch (error) {
       console.error('Failed to load instructions:', error);
       throw error;
@@ -304,7 +304,7 @@ This guide covers building Model Context Protocol (MCP) servers using Python and
    * Refresh data from awesome-copilot (placeholder for future implementation)
    */
   async refresh(): Promise<void> {
-    console.log('Refreshing awesome-copilot data...');
+    console.error('Refreshing awesome-copilot data...');
     // In real implementation, this would reload data from the MCP server
     await this.initialize();
   }
