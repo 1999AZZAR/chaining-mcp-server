@@ -48,6 +48,8 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 
 ### Core Chaining Capabilities
 
+![Blotcat exploring a dark cave with a lantern, finding glowing server nodes](assets/chaining-illustrations/01-discovery.jpg)
+
 - **Smart Server Discovery**: Automatically discovers MCP servers from `~/.cursor/mcp.json` and other configuration locations
 - **Tool Analysis**: Analyzes available tools and their capabilities
 - **Route Optimization**: Generates intelligent suggestions for tool chaining based on optimization criteria
@@ -319,6 +321,8 @@ Analyzes available tools from discovered MCP servers.
 
 Generates optimal route suggestions for a given task.
 
+![Blotcat drawing a red continuous route map on a wall to connect scattered tools](assets/chaining-illustrations/02-route.jpg)
+
 **Input**:
 
 - `task` (required): The task or problem to solve
@@ -340,6 +344,7 @@ Generates optimal route suggestions for a given task.
 
 Analyzes complex workflows using sequential thinking.
 
+![Blotcat sitting cross-legged, branching thought bubbles emerging from its head](assets/chaining-illustrations/03-sequential.jpg)
 **Input**:
 
 - `problem` (required): The problem to analyze
@@ -428,6 +433,7 @@ Generate creative ideas and solutions for problems using different brainstorming
 
 Execute complex multi-server workflows across the MCP ecosystem with dependency management and error handling.
 
+![Blotcat acting as a factory manager, operating conveyor belts for data handoffs](assets/chaining-illustrations/04-workflow.jpg)
 **Input**:
 
 - `workflowId` (required): Unique identifier for the workflow
