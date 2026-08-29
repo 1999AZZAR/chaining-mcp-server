@@ -5,6 +5,9 @@ import { sequentialThinkingTools } from './sequential-thinking-tools.js';
 import { timeManagementTools } from './time-management-tools.js';
 import { promptResourceTools } from './prompt-resource-tools.js';
 import { validationAnalysisTools } from './validation-analysis-tools.js';
+import { llmTools } from './llm-tools.js';
+
+const isLlmEnabled = (process.env.CHAINING_LLM_ENABLED || '').toLowerCase() === 'true';
 
 export const allTools: Tool[] = [
   ...coreChainingTools,
@@ -13,6 +16,7 @@ export const allTools: Tool[] = [
   ...timeManagementTools,
   ...promptResourceTools,
   ...validationAnalysisTools,
+  ...(isLlmEnabled ? llmTools : []),
 ];
 
 export {
@@ -22,4 +26,5 @@ export {
   timeManagementTools,
   promptResourceTools,
   validationAnalysisTools,
+  llmTools,
 };

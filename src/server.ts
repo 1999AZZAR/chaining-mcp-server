@@ -16,6 +16,7 @@ import { PromptRegistry } from './prompts/prompt-registry.js';
 import { AwesomeCopilotIntegration } from './integrations/awesome-copilot-integration.js';
 import { BrainstormingManager } from './managers/brainstorming-manager.js';
 import { WorkflowOrchestrator } from './managers/workflow-orchestrator.js';
+import { LLMManager } from './managers/llm-manager.js';
 
 import { allTools } from './tools/tool-registry.js';
 import { chainingResources } from './resources/resource-definitions.js';
@@ -33,6 +34,7 @@ export class ChainingMCPServer {
   private awesomeCopilotIntegration: AwesomeCopilotIntegration;
   private brainstormingManager: BrainstormingManager;
   private workflowOrchestrator: WorkflowOrchestrator;
+  private llmManager: LLMManager;
   private resourceHandlers: ResourceHandlers;
   private requestHandlers: RequestHandlers;
   private isInitialized: boolean = false;
@@ -48,6 +50,7 @@ export class ChainingMCPServer {
     this.awesomeCopilotIntegration = new AwesomeCopilotIntegration();
     this.brainstormingManager = new BrainstormingManager();
     this.workflowOrchestrator = new WorkflowOrchestrator();
+    this.llmManager = new LLMManager();
 
     // Initialize handlers
     this.resourceHandlers = new ResourceHandlers(
@@ -55,7 +58,8 @@ export class ChainingMCPServer {
       this.promptRegistry,
       this.awesomeCopilotIntegration,
       this.sequentialThinkingManager,
-      this.workflowOrchestrator
+      this.workflowOrchestrator,
+      this.llmManager
     );
 
     this.requestHandlers = new RequestHandlers(
@@ -67,7 +71,8 @@ export class ChainingMCPServer {
       this.promptRegistry,
       this.awesomeCopilotIntegration,
       this.brainstormingManager,
-      this.workflowOrchestrator
+      this.workflowOrchestrator,
+      this.llmManager
     );
 
     // Initialize MCP server

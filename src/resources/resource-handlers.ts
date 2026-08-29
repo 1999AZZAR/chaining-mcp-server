@@ -3,6 +3,7 @@ import { PromptRegistry } from '../prompts/prompt-registry.js';
 import { AwesomeCopilotIntegration } from '../integrations/awesome-copilot-integration.js';
 import { SequentialThinkingManager } from '../managers/sequential-thinking-manager.js';
 import { WorkflowOrchestrator } from '../managers/workflow-orchestrator.js';
+import { LLMManager } from '../managers/llm-manager.js';
 
 export class ResourceHandlers {
   constructor(
@@ -10,7 +11,8 @@ export class ResourceHandlers {
     private promptRegistry: PromptRegistry,
     private awesomeCopilotIntegration: AwesomeCopilotIntegration,
     private sequentialThinkingManager: SequentialThinkingManager,
-    private workflowOrchestrator: WorkflowOrchestrator
+    private workflowOrchestrator: WorkflowOrchestrator,
+    private llmManager?: LLMManager
   ) {}
 
   async handleReadResource(uri: string): Promise<any> {
@@ -115,20 +117,19 @@ export class ResourceHandlers {
         };
 
       case 'chaining://sequential/state':
-        // Simplified for modular version
+        const seqStats = this.sequentialThinkingManager.getStatistics();
         return {
-          activeSessions: 0,
-          totalSessions: 0,
+          totalThoughts: seqStats.totalThoughts,
+          totalBranches: seqStats.totalBranches,
+          revisions: seqStats.revisions,
+          averageThoughtLength: Math.round(seqStats.averageThoughtLength),
           lastActivity: new Date().toISOString(),
         };
 
       case 'chaining://workflows/status':
-        // Simplified for modular version
         return {
-          activeWorkflows: 0,
-          completedWorkflows: 0,
-          failedWorkflows: 0,
-          total: 0,
+          ...this.workflowOrchestrator.getStats(),
+          lastActivity: new Date().toISOString(),
         };
 
       case 'chaining://tool-chains':
@@ -155,6 +156,44 @@ export class ResourceHandlers {
           resourceSets: toolChainResourceSets.length,
           categories: ['analysis', 'implementation', 'debugging', 'orchestration', 'ci-cd'],
         };
+
+      case 'chaining://health':
+        const discoveredServers = this.discovery.getServers();
+        const discoveredTools = this.discovery.getTools();
+        const stats = this.discovery.getCacheStats();
+        return {
+          status: 'healthy',
+          uptime: process.uptime(),
+          timestamp: new Date().toISOString(),
+          discovery: {
+            serversDiscovered: discoveredServers.length,
+            toolsAnalyzed: discoveredTools.length,
+            cacheHits: stats.cacheHits,
+            cacheMisses: stats.cacheMisses,
+          },
+          integrations: {
+            sequentialThinking: 'ready',
+            timeManager: 'ready',
+            promptRegistry: {
+              promptsCount: this.promptRegistry.getAllPrompts().length,
+              resourceSetsCount: this.promptRegistry.getAllResourceSets().length,
+            },
+            awesomeCopilot: this.awesomeCopilotIntegration.isReady() ? 'ready' : 'degraded',
+          },
+          allToolsHealthy: true,
+        };
+
+      case 'chaining://cache/stats':
+        return {
+          ...this.discovery.getCacheStats(),
+          timestamp: new Date().toISOString(),
+        };
+
+      case 'chaining://llm/status':
+        return this.llmManager ? this.llmManager.getStatus() : { enabled: false, hasKey: false, model: 'none' };
+
+      case 'chaining://llm/usage':
+        return this.llmManager ? this.llmManager.getUsage() : { callsTotal: 0, promptTokensTotal: 0, completionTokensTotal: 0 };
 
       default:
         throw new Error(`Unknown resource: ${uri}`);

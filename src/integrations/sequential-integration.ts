@@ -475,9 +475,17 @@ Please analyze this problem and suggest the best approach for tool chaining, con
    * Create a simple route suggestion using MCP tools
    */
   private createSimpleRoute(availableTools: any[], criteria: OptimizationCriteria): RouteSuggestion {
-    const simpleTools = availableTools.filter(tool => 
-      (tool.complexity || 1) <= 3
+    let simpleTools = availableTools.filter(tool => 
+      (tool.complexity || tool.estimatedComplexity || 1) <= 3
     ).slice(0, 3);
+
+    if (simpleTools.length === 0) {
+      simpleTools = availableTools.slice(0, Math.min(3, availableTools.length));
+    }
+
+    const count = Math.max(1, simpleTools.length);
+    const duration = simpleTools.reduce((sum, tool) => sum + (tool.duration || tool.estimatedDuration || 500), 0);
+    const complexity = simpleTools.reduce((sum, tool) => sum + (tool.complexity || tool.estimatedComplexity || 2), 0) / count;
 
     return {
       id: 'mcp_simple_' + Date.now(),
@@ -486,14 +494,14 @@ Please analyze this problem and suggest the best approach for tool chaining, con
       tools: simpleTools.map(tool => ({
         name: tool.name,
         description: tool.description,
-        inputSchema: {},
-        serverName: 'mcp-server',
-        category: tool.category,
-        estimatedComplexity: tool.complexity,
-        estimatedDuration: tool.duration,
+        inputSchema: tool.inputSchema || {},
+        serverName: tool.serverName || 'mcp-server',
+        category: tool.category || 'utility',
+        estimatedComplexity: tool.complexity || tool.estimatedComplexity || 2,
+        estimatedDuration: tool.duration || tool.estimatedDuration || 500,
       })),
-      estimatedDuration: simpleTools.reduce((sum, tool) => sum + (tool.duration || 1000), 0),
-      complexity: simpleTools.reduce((sum, tool) => sum + (tool.complexity || 1), 0) / simpleTools.length,
+      estimatedDuration: duration,
+      complexity: Math.round(complexity * 10) / 10,
       confidence: 0.8,
       reasoning: 'Sequential thinking suggests a simple approach with minimal MCP tool complexity',
     };
@@ -503,9 +511,17 @@ Please analyze this problem and suggest the best approach for tool chaining, con
    * Create a fast route suggestion using MCP tools
    */
   private createFastRoute(availableTools: any[], criteria: OptimizationCriteria): RouteSuggestion {
-    const fastTools = availableTools.filter(tool => 
-      (tool.duration || 1000) <= 2000
+    let fastTools = availableTools.filter(tool => 
+      (tool.duration || tool.estimatedDuration || 1000) <= 2000
     ).slice(0, 4);
+
+    if (fastTools.length === 0) {
+      fastTools = availableTools.slice(0, Math.min(3, availableTools.length));
+    }
+
+    const count = Math.max(1, fastTools.length);
+    const duration = fastTools.reduce((sum, tool) => sum + (tool.duration || tool.estimatedDuration || 500), 0);
+    const complexity = fastTools.reduce((sum, tool) => sum + (tool.complexity || tool.estimatedComplexity || 2), 0) / count;
 
     return {
       id: 'mcp_fast_' + Date.now(),
@@ -514,14 +530,14 @@ Please analyze this problem and suggest the best approach for tool chaining, con
       tools: fastTools.map(tool => ({
         name: tool.name,
         description: tool.description,
-        inputSchema: {},
-        serverName: 'mcp-server',
-        category: tool.category,
-        estimatedComplexity: tool.complexity,
-        estimatedDuration: tool.duration,
+        inputSchema: tool.inputSchema || {},
+        serverName: tool.serverName || 'mcp-server',
+        category: tool.category || 'utility',
+        estimatedComplexity: tool.complexity || tool.estimatedComplexity || 2,
+        estimatedDuration: tool.duration || tool.estimatedDuration || 500,
       })),
-      estimatedDuration: fastTools.reduce((sum, tool) => sum + (tool.duration || 1000), 0),
-      complexity: fastTools.reduce((sum, tool) => sum + (tool.complexity || 1), 0) / fastTools.length,
+      estimatedDuration: duration,
+      complexity: Math.round(complexity * 10) / 10,
       confidence: 0.75,
       reasoning: 'Sequential thinking recommends prioritizing speed with efficient MCP tool selection',
     };
@@ -532,6 +548,9 @@ Please analyze this problem and suggest the best approach for tool chaining, con
    */
   private createComprehensiveRoute(availableTools: any[], criteria: OptimizationCriteria): RouteSuggestion {
     const comprehensiveTools = availableTools.slice(0, 5);
+    const count = Math.max(1, comprehensiveTools.length);
+    const duration = comprehensiveTools.reduce((sum, tool) => sum + (tool.duration || tool.estimatedDuration || 500), 0);
+    const complexity = comprehensiveTools.reduce((sum, tool) => sum + (tool.complexity || tool.estimatedComplexity || 3), 0) / count;
 
     return {
       id: 'mcp_comprehensive_' + Date.now(),
@@ -540,14 +559,14 @@ Please analyze this problem and suggest the best approach for tool chaining, con
       tools: comprehensiveTools.map(tool => ({
         name: tool.name,
         description: tool.description,
-        inputSchema: {},
-        serverName: 'mcp-server',
-        category: tool.category,
-        estimatedComplexity: tool.complexity,
-        estimatedDuration: tool.duration,
+        inputSchema: tool.inputSchema || {},
+        serverName: tool.serverName || 'mcp-server',
+        category: tool.category || 'utility',
+        estimatedComplexity: tool.complexity || tool.estimatedComplexity || 3,
+        estimatedDuration: tool.duration || tool.estimatedDuration || 500,
       })),
-      estimatedDuration: comprehensiveTools.reduce((sum, tool) => sum + (tool.duration || 1000), 0),
-      complexity: comprehensiveTools.reduce((sum, tool) => sum + (tool.complexity || 1), 0) / comprehensiveTools.length,
+      estimatedDuration: duration,
+      complexity: Math.round(complexity * 10) / 10,
       confidence: 0.7,
       reasoning: 'Sequential thinking suggests a comprehensive approach for complex problems using MCP tools',
     };
@@ -557,9 +576,17 @@ Please analyze this problem and suggest the best approach for tool chaining, con
    * Create an alternative route suggestion
    */
   private createAlternativeRoute(availableTools: any[], criteria: OptimizationCriteria): RouteSuggestion {
-    const alternativeTools = availableTools.filter(tool => 
+    let alternativeTools = availableTools.filter(tool => 
       tool.category !== 'utility' && tool.category !== 'system'
     ).slice(0, 3);
+
+    if (alternativeTools.length === 0) {
+      alternativeTools = availableTools.slice(0, Math.min(3, availableTools.length));
+    }
+
+    const count = Math.max(1, alternativeTools.length);
+    const duration = alternativeTools.reduce((sum, tool) => sum + (tool.duration || tool.estimatedDuration || 500), 0);
+    const complexity = alternativeTools.reduce((sum, tool) => sum + (tool.complexity || tool.estimatedComplexity || 3), 0) / count;
 
     return {
       id: 'mcp_alternative_' + Date.now(),
@@ -568,14 +595,14 @@ Please analyze this problem and suggest the best approach for tool chaining, con
       tools: alternativeTools.map(tool => ({
         name: tool.name,
         description: tool.description,
-        inputSchema: {},
-        serverName: 'mcp-server',
-        category: tool.category,
-        estimatedComplexity: tool.complexity,
-        estimatedDuration: tool.duration,
+        inputSchema: tool.inputSchema || {},
+        serverName: tool.serverName || 'mcp-server',
+        category: tool.category || 'utility',
+        estimatedComplexity: tool.complexity || tool.estimatedComplexity || 3,
+        estimatedDuration: tool.duration || tool.estimatedDuration || 500,
       })),
-      estimatedDuration: alternativeTools.reduce((sum, tool) => sum + (tool.duration || 1000), 0),
-      complexity: alternativeTools.reduce((sum, tool) => sum + (tool.complexity || 1), 0) / alternativeTools.length,
+      estimatedDuration: duration,
+      complexity: Math.round(complexity * 10) / 10,
       confidence: 0.65,
       reasoning: 'Alternative MCP tool chain providing different approach to the problem',
     };

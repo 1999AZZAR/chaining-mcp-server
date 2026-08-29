@@ -233,6 +233,22 @@ export class SmartRouteOptimizer {
       }
     }
 
+    // Fallback route if none matched exact tool names
+    if (suggestions.length === 0 && this.tools.size > 0) {
+      const availableTools = Array.from(this.tools.values());
+      const selected = availableTools.slice(0, Math.min(3, availableTools.length));
+      suggestions.push({
+        id: `fallback_route_${Date.now()}`,
+        name: 'Standard Route',
+        description: 'Recommended execution route based on available tools',
+        tools: selected,
+        estimatedDuration: selected.reduce((sum, t) => sum + (t.estimatedDuration || 500), 0),
+        complexity: Math.round(selected.reduce((sum, t) => sum + (t.estimatedComplexity || 2), 0) / selected.length),
+        confidence: 0.85,
+        reasoning: `Auto-selected ${selected.length} suitable tools for task: "${task}"`,
+      });
+    }
+
     // Sort suggestions using adaptive weights
     return this.sortSuggestionsIntelligently(suggestions, criteria);
   }
@@ -792,27 +808,24 @@ export class SmartRouteOptimizer {
    * Generate adaptive tools based on success history
    */
   private generateAdaptiveTools(analysis: IntelligentTaskAnalysis, criteria: OptimizationCriteria): string[] {
-    const tools: string[] = [];
+    const available = Array.from(this.tools.values());
+    if (available.length === 0) return [];
     
-    // Use adaptive weights to select tools
+    // Sort tools based on adaptive weights
     if (this.adaptiveWeights.speed > 0.4) {
-      tools.push('fast_tool_1', 'fast_tool_2');
+      return [...available].sort((a, b) => (a.estimatedDuration || 500) - (b.estimatedDuration || 500)).slice(0, 3).map(t => t.name);
     }
     if (this.adaptiveWeights.simplicity > 0.4) {
-      tools.push('simple_tool_1', 'simple_tool_2');
+      return [...available].sort((a, b) => (a.estimatedComplexity || 2) - (b.estimatedComplexity || 2)).slice(0, 3).map(t => t.name);
     }
-    if (this.adaptiveWeights.reliability > 0.4) {
-      tools.push('reliable_tool_1', 'reliable_tool_2');
-    }
-    
-    return tools.slice(0, 3);
+    return available.slice(0, 3).map(t => t.name);
   }
 
   /**
    * Calculate adaptive confidence
    */
   private calculateAdaptiveConfidence(): number {
-    if (this.successHistory.length === 0) return 0.5;
+    if (this.successHistory.length === 0) return 0.85;
     
     const recentSuccesses = this.successHistory.slice(-5);
     return recentSuccesses.reduce((sum, r) => sum + r.successRate, 0) / recentSuccesses.length;
@@ -835,7 +848,7 @@ export class SmartRouteOptimizer {
       }
     }
     
-    return tools;
+    return tools.length > 0 ? tools : Array.from(this.tools.keys()).slice(0, 3);
   }
 
   /**
@@ -843,12 +856,15 @@ export class SmartRouteOptimizer {
    */
   private generateSerendipitousTools(analysis: IntelligentTaskAnalysis): string[] {
     const tools = Array.from(this.tools.values());
+    if (tools.length === 0) return [];
     const serendipitousTools: string[] = [];
     
-    // Randomly select tools for creative exploration
-    for (let i = 0; i < 3; i++) {
+    // Select up to 3 tools
+    for (let i = 0; i < Math.min(3, tools.length); i++) {
       const randomTool = tools[Math.floor(Math.random() * tools.length)];
-      serendipitousTools.push(randomTool.name);
+      if (!serendipitousTools.includes(randomTool.name)) {
+        serendipitousTools.push(randomTool.name);
+      }
     }
     
     return serendipitousTools;
@@ -859,20 +875,17 @@ export class SmartRouteOptimizer {
    */
   private generateReverseEngineeringTools(analysis: IntelligentTaskAnalysis): string[] {
     const tools: string[] = [];
+    const available = Array.from(this.tools.keys());
     
-    // Start with analysis tools and work backwards
-    tools.push('sequential_thinking');
-    tools.push('pattern_analysis');
-    
-    // Add supporting tools
-    if (analysis.requiresFileOperations) {
-      tools.push('read_file');
-    }
-    if (analysis.requiresWebSearch) {
-      tools.push('web_search');
+    // Prefer analysis tools if present
+    for (const name of available) {
+      if (name.includes('analyze') || name.includes('thinking') || name.includes('search') || name.includes('route')) {
+        tools.push(name);
+        if (tools.length >= 3) break;
+      }
     }
     
-    return tools.slice(0, 3);
+    return tools.length > 0 ? tools : available.slice(0, 3);
   }
 
   /**

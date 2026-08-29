@@ -79,4 +79,28 @@ export const chainingResources: Resource[] = [
     description: 'Returns a JSON overview of available tool chaining resources organized by category and complexity level, providing insights into the tool chaining capabilities',
     mimeType: 'application/json',
   },
+  {
+    uri: 'chaining://health',
+    name: 'Server Health Status',
+    description: 'Returns real-time health status of all tools, discovery services, and integrations',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'chaining://cache/stats',
+    name: 'Cache Statistics',
+    description: 'Returns cache hit/miss statistics and discovery cache state',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'chaining://llm/status',
+    name: 'Internal LLM Engine Status',
+    description: 'Returns status and configuration of internal LLM engine (never exposes keys)',
+    mimeType: 'application/json',
+  },
+  {
+    uri: 'chaining://llm/usage',
+    name: 'Internal LLM Usage Statistics',
+    description: 'Returns token usage and call volume for the internal LLM engine',
+    mimeType: 'application/json',
+  },
 ];

@@ -111,7 +111,12 @@ export class BrainstormingManager {
   };
 
   async generateIdeas(input: BrainstormingInput): Promise<BrainstormResult> {
-    const { topic, context = '', approach, ideaCount, includeEvaluation, constraints = [] } = input;
+    const topic = input.topic || 'General Problem Solving';
+    const context = input.context || '';
+    const approach = input.approach || 'creative';
+    const ideaCount = input.ideaCount || 5;
+    const includeEvaluation = input.includeEvaluation;
+    const constraints = input.constraints || [];
 
     // Generate ideas based on approach
     const ideas = this.generateIdeasForApproach(topic, context, approach, ideaCount, constraints);
@@ -176,11 +181,22 @@ export class BrainstormingManager {
           ...this.PRACTICAL_IDEAS['implementation'],
         ];
         break;
+      default:
+        templates = [
+          ...this.CREATIVE_IDEAS['problem-solving'],
+          ...this.ANALYTICAL_IDEAS['data-driven'],
+          ...this.PRACTICAL_IDEAS['implementation'],
+        ];
+        break;
+    }
+
+    if (templates.length === 0) {
+      templates = ['Explore innovative approaches to topic', 'Analyze practical implementation of topic'];
     }
 
     // Generate ideas by adapting templates to the topic
     for (let i = 0; i < count && ideas.length < count; i++) {
-      const template = templates[i % templates.length];
+      const template = templates[i % templates.length] || `Brainstorm idea ${i + 1} for ${topic}`;
       const idea = this.adaptTemplateToTopic(template, topic, context, constraints);
 
       if (!usedIdeas.has(idea.content)) {

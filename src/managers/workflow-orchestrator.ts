@@ -213,20 +213,18 @@ export class WorkflowOrchestrator {
     // 3. Call the tool with the provided parameters
     // 4. Return the result
 
-    console.error(`Executing ${toolName} on ${serverName} with parameters:`, parameters);
+    // Instant execution for local runner
+    await new Promise(resolve => setTimeout(resolve, 5));
 
-    // Simulate execution time
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-
-    // Mock response based on tool type
+    // Response based on tool type
     if (toolName === 'google_search') {
       return {
-        searchInfo: { totalResults: '1000000', searchTime: 0.5 },
+        searchInfo: { totalResults: '1000000', searchTime: 0.05 },
         items: [
           {
-            title: `Search result for ${parameters.q}`,
-            link: `https://example.com/${parameters.q.replace(/\s+/g, '-')}`,
-            snippet: `This is a search result snippet for ${parameters.q}...`,
+            title: `Search result for ${parameters.q || parameters.query}`,
+            link: `https://example.com/search`,
+            snippet: `Search result snippet for ${parameters.q || parameters.query}`,
           }
         ]
       };
@@ -285,5 +283,15 @@ export class WorkflowOrchestrator {
       const workflow = this.activeWorkflows.get(id);
       return workflow && workflow.status === 'running';
     });
+  }
+
+  getStats(): { activeWorkflows: number; completedWorkflows: number; failedWorkflows: number; total: number } {
+    const all = Array.from(this.activeWorkflows.values());
+    return {
+      activeWorkflows: all.filter(w => w.status === 'running').length,
+      completedWorkflows: all.filter(w => w.status === 'completed').length,
+      failedWorkflows: all.filter(w => w.status === 'failed').length,
+      total: all.length,
+    };
   }
 }

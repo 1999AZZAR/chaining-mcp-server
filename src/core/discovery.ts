@@ -12,6 +12,11 @@ export class MCPServerDiscovery {
   private tools: Map<string, ToolInfo> = new Map();
   private configLoader: ConfigLoader;
   private config!: DiscoveryConfig;
+  private lastDiscoveryTime: number = 0;
+  private lastAnalyzeTime: number = 0;
+  private cacheTtlMs: number = 60000;
+  private cacheHits: number = 0;
+  private cacheMisses: number = 0;
 
   constructor() {
     this.configLoader = new ConfigLoader();
@@ -20,14 +25,21 @@ export class MCPServerDiscovery {
   /**
    * Discover MCP servers from common configuration locations
    */
-  async discoverServers(): Promise<MCPServerInfo[]> {
+  async discoverServers(forceRefresh = false): Promise<MCPServerInfo[]> {
+    const now = Date.now();
+    if (!forceRefresh && this.servers.size > 0 && (now - this.lastDiscoveryTime < this.cacheTtlMs)) {
+      this.cacheHits++;
+      return Array.from(this.servers.values());
+    }
+    this.cacheMisses++;
+
     // Load configuration
     this.config = await this.configLoader.loadConfig();
     
     // Get config paths from configuration
     const configPaths = this.configLoader.expandPaths(this.config.configPaths);
     
-    // Add package.json files that might contain MCP server configs
+    // Add package.json files that might contain MCP server configs (bounded)
     const packageJsonPaths = await this.findPackageJsonFiles();
     configPaths.push(...packageJsonPaths);
 
@@ -55,8 +67,9 @@ export class MCPServerDiscovery {
     for (const server of discoveredServers) {
       this.servers.set(server.name, server);
     }
+    this.lastDiscoveryTime = Date.now();
 
-    return discoveredServers;
+    return Array.from(this.servers.values());
   }
 
   /**
@@ -65,15 +78,16 @@ export class MCPServerDiscovery {
   private async findPackageJsonFiles(): Promise<string[]> {
     try {
       const patterns = [
-        '**/package.json',
-        '**/mcp-servers.json',
-        '**/.mcp/servers.json',
+        'package.json',
+        'mcp-servers.json',
+        '.mcp/servers.json',
       ];
       
       const files: string[] = [];
       for (const pattern of patterns) {
         const matches = await glob(pattern, {
-          ignore: ['node_modules/**', 'dist/**', 'build/**'],
+          maxDepth: 2,
+          ignore: ['node_modules/**', 'dist/**', 'build/**', '.git/**'],
           cwd: process.cwd(),
         });
         files.push(...matches);
@@ -159,7 +173,14 @@ export class MCPServerDiscovery {
   /**
    * Analyze tools from discovered servers
    */
-  async analyzeTools(): Promise<ToolInfo[]> {
+  async analyzeTools(forceRefresh = false): Promise<ToolInfo[]> {
+    const now = Date.now();
+    if (!forceRefresh && this.tools.size > 0 && (now - this.lastAnalyzeTime < this.cacheTtlMs)) {
+      this.cacheHits++;
+      return Array.from(this.tools.values());
+    }
+    this.cacheMisses++;
+
     const tools: ToolInfo[] = [];
 
     for (const [serverName, serverInfo] of this.servers) {
@@ -167,7 +188,6 @@ export class MCPServerDiscovery {
         const serverTools = await this.extractToolsFromServer(serverName, serverInfo);
         tools.push(...serverTools);
       } catch (error) {
-        console.error(`Failed to analyze tools from server ${serverName}:`, error);
         // Add fallback tools for known server types
         const fallbackTools = this.getFallbackTools(serverName, serverInfo);
         tools.push(...fallbackTools);
@@ -178,6 +198,7 @@ export class MCPServerDiscovery {
     for (const tool of tools) {
       this.tools.set(tool.name, tool);
     }
+    this.lastAnalyzeTime = Date.now();
 
     return tools;
   }
@@ -206,12 +227,16 @@ export class MCPServerDiscovery {
    */
   private async queryServerTools(serverName: string, serverInfo: MCPServerInfo): Promise<ToolInfo[]> {
     return new Promise((resolve, reject) => {
+      let child: ChildProcess | null = null;
       const timeout = setTimeout(() => {
+        if (child) {
+          try { child.kill('SIGKILL'); } catch (_) {}
+        }
         reject(new Error(`Timeout connecting to server ${serverName}`));
-      }, 3000); // Reduced timeout to 3 seconds
+      }, 1000); // 1 second timeout per server
 
       try {
-        const child = spawn(serverInfo.command, serverInfo.args, {
+        child = spawn(serverInfo.command, serverInfo.args, {
           env: { ...process.env, ...serverInfo.env },
           stdio: ['pipe', 'pipe', 'pipe'],
         });
@@ -261,6 +286,9 @@ export class MCPServerDiscovery {
 
       } catch (error) {
         clearTimeout(timeout);
+        if (child) {
+          try { (child as ChildProcess).kill('SIGKILL'); } catch (_) {}
+        }
         reject(new Error(`Failed to query server ${serverName}: ${error instanceof Error ? error.message : String(error)}`));
       }
     });
@@ -421,10 +449,16 @@ export class MCPServerDiscovery {
   }
 
   /**
-   * Update configuration
+   * Get cache statistics
    */
-  async updateConfiguration(newConfig: Partial<DiscoveryConfig>): Promise<void> {
-    this.config = this.configLoader.mergeConfigs(this.config, newConfig);
-    await this.reloadConfiguration();
+  getCacheStats(): { cacheHits: number; cacheMisses: number; serversCount: number; toolsCount: number; lastDiscoveryTime: number; lastAnalyzeTime: number } {
+    return {
+      cacheHits: this.cacheHits,
+      cacheMisses: this.cacheMisses,
+      serversCount: this.servers.size,
+      toolsCount: this.tools.size,
+      lastDiscoveryTime: this.lastDiscoveryTime,
+      lastAnalyzeTime: this.lastAnalyzeTime,
+    };
   }
 }

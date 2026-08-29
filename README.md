@@ -79,6 +79,14 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Time Conversion**: Convert times between different timezones
 - **DST Handling**: Automatic daylight saving time detection
 
+### Built-in LLM Intelligence Engine
+
+- **Multi-Provider Support**: Built-in native client supporting OpenRouter and OpenAI-compatible endpoints
+- **Zero Host Token Waste**: Offloads task decomposition, route ranking, and summarization to fast sub-models (e.g. `openrouter/free` with auto-fallback to `openrouter/auto`)
+- **Task Decomposition**: Breaks complex engineering goals into categorized, sequential tool chains
+- **High-Density Summarization**: Summarizes lengthy command outputs and logs without polluting the main agent's context window
+- **Resilient Fallback**: Automatic instant fallback to local heuristic routing if the LLM is unconfigured or rate-limited
+
 ### Enterprise Capabilities
 
 - **Monitoring & Analytics**: System health monitoring, performance bottleneck analysis, tool usage analytics
@@ -91,12 +99,14 @@ A refined and unified Model Context Protocol (MCP) server that combines intellig
 - **Comprehensive Validation**: Uses Zod schemas for robust data validation
 - **Production Ready**: Clean project structure with proper `.gitignore` and build system
 - **Unified Interface**: Single server providing all functionality
+- **In-Memory Caching with TTL**: 60s TTL for server and tool discovery with bounded directory traversal
+- **Per-Tool Timeout Safeguards**: 10s default execution timeout preventing process hangs
 - **Enhanced Components**: Refined implementations of sequential thinking and time management
 - **Robust Error Handling**: Improved validation and error handling across all components
 - **Enhanced Time Management**: Better timezone handling with proper DST detection
 - **Advanced Sequential Thinking**: Enhanced thought processing with branching and revision support
 - **Awesome Copilot Integration**: Direct access to curated development collections and instructions
-- **40 Prompts & 12 Resource Sets**: Comprehensive collection covering development, orchestration, MCP ecosystem workflows, monitoring, analytics, security, and compliance guidance
+- **42 Prompts & 12 Resource Sets**: Comprehensive collection covering development, orchestration, MCP ecosystem workflows, monitoring, analytics, security, and compliance guidance
 - **Intelligent Tool Guidance**: Structured guidance to help models effectively use available toolsets
 
 ## Prebuilt Prompts & Resource Sets
@@ -269,9 +279,9 @@ These prebuilt prompts and resource sets help models:
    npm run build
    ```
 
-Configuration
+### Configuration
 
-Add the chaining MCP server to your MCP client configuration:
+Add the chaining MCP server to your MCP client configuration (`~/.cursor/mcp.json`, `~/.gemini/antigravity-cli/mcp_config.json`, `~/.config/opencode/opencode.json`, `~/.config/zed/settings.json`, etc.):
 
 ```json
 {
@@ -280,6 +290,11 @@ Add the chaining MCP server to your MCP client configuration:
       "command": "node",
       "args": ["/path/to/chaining-mcp-server/dist/index.js"],
       "env": {
+        "CHAINING_TOOL_TIMEOUT_MS": "10000",
+        "CHAINING_LLM_ENABLED": "true",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "CHAINING_LLM_MODEL": "openrouter/free",
+        "CHAINING_LLM_BASE_URL": "https://openrouter.ai/api/v1",
         "SEQUENTIAL_THINKING_AVAILABLE": "true",
         "AWESOME_COPILOT_ENABLED": "true",
         "RELIABILITY_MONITORING_ENABLED": "true",
@@ -292,7 +307,9 @@ Add the chaining MCP server to your MCP client configuration:
 
 **Note:** Replace `/path/to/chaining-mcp-server` with your actual path to the chaining-mcp-server directory.
 
-**Important:** Set `GITHUB_TOKEN` to a valid GitHub Personal Access Token to use awesome-copilot tools. Get a token from https://github.com/settings/tokens.
+**Important:** 
+- `OPENROUTER_API_KEY`: Required if `CHAINING_LLM_ENABLED` is `true`. Automatically uses `openrouter/free` and falls back to `openrouter/auto`.
+- `GITHUB_TOKEN`: Optional, required only for live syncing of remote GitHub Awesome Copilot instructions. (Local fallback is used if omitted).
 
 ## Available Tools
 
@@ -557,6 +574,51 @@ Analyze performance metrics and efficiency of tool chains. Provides execution ti
 
 **Output**: JSON object with performance metrics, complexity analysis, and optimization recommendations.
 
+### Built-in LLM Engine Tools
+
+#### 19. `llm_query`
+
+Execute direct queries and reasoning tasks through OpenRouter / OpenAI endpoints without consuming the parent agent's tokens.
+
+**Input**:
+
+- `prompt` (required): User prompt or query to execute
+- `systemPrompt` (optional): Custom system instructions for persona/formatting
+
+**Output**: JSON object with model response, tokens used, latency, and status.
+
+#### 20. `llm_decompose_task`
+
+Intelligently decomposes complex multi-step development goals into structured, ordered subtasks with tool categorization recommendations.
+
+**Input**:
+
+- `task` (required): High-level task description to decompose
+
+**Output**: JSON object containing array of subtasks, recommended categories, and suggested workflow steps.
+
+#### 21. `llm_suggest_route`
+
+Analyzes task requirements and uses internal AI to rank and score the optimal tool execution chain, with instant heuristic fallback when LLM is offline.
+
+**Input**:
+
+- `task` (required): Task to optimize routes for
+- `criteria` (optional): Routing constraints (speed, reliability, complexity)
+
+**Output**: JSON object with top routes, confidence scores, and reasoning breakdown.
+
+#### 22. `llm_summarize`
+
+Generates high-density summaries of extensive logs, search results, or multi-tool outputs.
+
+**Input**:
+
+- `content` (required): Long-form text content to summarize
+- `maxWords` (optional): Target word count bound (default: 150)
+
+**Output**: JSON object with concise summary.
+
 ## Available Resources
 
 ### `chaining://servers`
@@ -610,6 +672,22 @@ Returns a JSON collection of comprehensive tool chaining resources including pro
 ### `chaining://tool-chains/overview`
 
 Returns a JSON overview of available tool chaining resources organized by category and complexity level, providing insights into the tool chaining capabilities.
+
+### `chaining://health`
+
+Returns a live health check status of the server and sub-components.
+
+### `chaining://cache/stats`
+
+Returns discovery caching metrics (hits, misses, TTL status).
+
+### `chaining://llm/status`
+
+Returns internal LLM engine state, configured model, and availability.
+
+### `chaining://llm/usage`
+
+Returns session-level token consumption and API call tracking metrics.
 
 ## Usage Examples
 
@@ -797,6 +875,30 @@ const conversion = await mcpClient.callTool('convert_time', {
 });
 ```
 
+### Built-in LLM Intelligence Tools
+
+```javascript
+// Decompose a complex project goal into ordered subtasks
+const decomposition = await mcpClient.callTool('llm_decompose_task', {
+  task: 'Build and deploy a fullstack TypeScript application with automated database migrations'
+});
+console.log(decomposition.subtasks);
+
+// Generate AI-scored and ranked tool execution route
+const aiRoute = await mcpClient.callTool('llm_suggest_route', {
+  task: 'Optimize PostgreSQL slow queries using indexing and memory caches',
+  criteria: { prioritizeReliability: true }
+});
+console.log(aiRoute.routes);
+
+// High-density log & output summarization
+const summary = await mcpClient.callTool('llm_summarize', {
+  content: 'Extensive build error logs or raw JSON command outputs...',
+  maxWords: 100
+});
+console.log(summary.summary);
+```
+
 ### Prebuilt Prompts & Resources
 
 ```javascript
@@ -839,42 +941,43 @@ console.log(allPrompts);
 const allResources = await mcpClient.readResource('chaining://resources');
 console.log(allResources);
 
-// Get prompts overview
-const overview = await mcpClient.readResource('chaining://prompts/overview');
-console.log(overview);
+// Get server health & uptime status
+const health = await mcpClient.readResource('chaining://health');
+console.log(health);
 
-// Get awesome-copilot collections
-const collections = await mcpClient.readResource('chaining://awesome-copilot/collections');
-console.log(collections);
+// Get discovery cache hit/miss statistics
+const cacheStats = await mcpClient.readResource('chaining://cache/stats');
+console.log(cacheStats);
 
-// Get awesome-copilot instructions
-const instructions = await mcpClient.readResource('chaining://awesome-copilot/instructions');
-console.log(instructions);
-
-// Get awesome-copilot integration status
-const status = await mcpClient.readResource('chaining://awesome-copilot/status');
-console.log(status);
-
-// Get sequential thinking state
-const sequentialState = await mcpClient.readResource('chaining://sequential/state');
-console.log(sequentialState);
-
-// Get comprehensive tool chaining resources
-const toolChains = await mcpClient.readResource('chaining://tool-chains');
-console.log('Available tool chains:', toolChains);
-
-// Get tool chaining overview
-const toolChainsOverview = await mcpClient.readResource('chaining://tool-chains/overview');
-console.log('Tool chaining overview:', toolChainsOverview);
+// Get internal LLM engine status & token usage
+const llmStatus = await mcpClient.readResource('chaining://llm/status');
+const llmUsage = await mcpClient.readResource('chaining://llm/usage');
+console.log(llmStatus, llmUsage);
 ```
 
 ## Environment Variables
 
-- `SEQUENTIAL_THINKING_AVAILABLE`: Set to 'true' to enable sequential thinking integration
-- `MCP_SERVERS`: JSON string containing additional MCP server configurations
-- `DISABLE_THOUGHT_LOGGING`: Set to 'true' to disable sequential thinking thought logging
-- `AWESOME_COPILOT_ENABLED`: Set to 'false' to disable awesome-copilot integration
-- `GITHUB_TOKEN`: GitHub Personal Access Token required for awesome-copilot tools (get from https://github.com/settings/tokens)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CHAINING_TOOL_TIMEOUT_MS` | `10000` | Hard timeout (ms) for any tool execution |
+| `CHAINING_LLM_ENABLED` | `false` | Enable built-in OpenRouter LLM intelligence features |
+| `OPENROUTER_API_KEY` | *optional* | API Key for OpenRouter (`sk-or-v1-...`) |
+| `CHAINING_LLM_MODEL` | `openrouter/free` | Primary model identifier (auto-falls back to `openrouter/auto`) |
+| `CHAINING_LLM_BASE_URL` | `https://openrouter.ai/api/v1` | OpenRouter or OpenAI-compatible endpoint URL |
+| `CHAINING_LLM_MAX_TOKENS` | `1024` | Maximum tokens per internal generation request |
+| `CHAINING_LLM_TIMEOUT_MS` | `4000` | AbortController timeout for LLM network requests |
+| `GITHUB_TOKEN` | *optional* | Personal access token for remote GitHub instruction syncing |
+| `DISABLE_THOUGHT_LOGGING` | `false` | When true, suppresses terminal thought rendering in sequential thinking |
+| `MCP_DISCOVERY_CONFIG_PATHS` | *auto* | JSON array of paths to custom MCP config files |
+| `MCP_SERVERS` | *none* | Direct JSON definition of MCP servers |
+| `MEMORY_FILE_PATH` | `./data/memory.json` | Path to persistent cache file |
+
+### Zero-Key & Offline Autonomous Operation
+
+The server is built to run seamlessly in 100% offline, zero-key environments:
+- **No `OPENROUTER_API_KEY`**: LLM tools (`llm_suggest_route`, `llm_decompose_task`, `llm_summarize`) gracefully and instantly degrade to local heuristic planning (<30ms) without errors or timeouts.
+- **No `GITHUB_TOKEN`**: Awesome Copilot tools (`search_instructions`, `load_instruction`) operate from the local bundled catalog with zero network requirements.
+- **Core Orchestration**: All 18 core tools, sequential thinking, brainstorming, workflow runners, time management, prompts, and resources run locally in <5ms.
 
 ## Development
 
@@ -882,61 +985,55 @@ console.log('Tool chaining overview:', toolChainsOverview);
 
 ```
 src/
-├── index.ts                           # Main entry point
-├── server.ts                          # Clean orchestrator (220 lines, fully modularized)
+├── index.ts                           # Main entry point (stdio JSON-RPC transport)
+├── server.ts                          # Clean orchestrator (modular server lifecycle)
 ├── types.ts                           # Type definitions and Zod schemas
 ├── core/
-│   ├── discovery.ts                   # Server discovery logic
-│   └── optimizer.ts                   # Route optimization algorithms
+│   ├── discovery.ts                   # Server discovery logic with 60s TTL caching
+│   └── optimizer.ts                   # Route optimization & fallback algorithms
 ├── managers/
-│   ├── brainstorming-manager.ts       # Brainstorming functionality
-│   ├── sequential-thinking-manager.ts # Sequential thinking processing
-│   ├── workflow-orchestrator.ts       # Workflow orchestration
-│   ├── reliability-manager.ts         # System reliability management
-│   ├── time-manager.ts                # Time and timezone management
-│   └── memory-manager.ts              # Memory and knowledge management
+│   ├── brainstorming-manager.ts       # Multi-approach brainstorming generator
+│   ├── sequential-thinking-manager.ts # Structured sequential thinking processing
+│   ├── workflow-orchestrator.ts       # Non-blocking workflow orchestration
+│   ├── reliability-manager.ts         # System reliability & health monitoring
+│   ├── time-manager.ts                # Time and timezone management with DST
+│   ├── memory-manager.ts              # Memory and knowledge graph management
+│   └── llm-manager.ts                 # Native OpenRouter/OpenAI API manager
 ├── integrations/
-│   ├── awesome-copilot-integration.ts # Awesome Copilot integration
+│   ├── awesome-copilot-integration.ts # Awesome Copilot integration & local catalog
 │   └── sequential-integration.ts      # Sequential thinking integration
 ├── prompts/
 │   ├── prompt-definitions.ts          # Prompt and resource set data definitions
 │   ├── prompt-handlers.ts             # Dynamic prompt generation and validation logic
-│   └── prompt-registry.ts             # Registry for managing prompts and resource sets (40 prompts, 12 resource sets)
-├── config/
-│   ├── config-loader.ts               # Configuration loading utilities
-│   └── discovery-config.ts            # Discovery configuration
-├── utils/
-│   └── schema-utils.ts                # Schema utility functions
+│   └── prompt-registry.ts             # Registry for managing 42 prompts & 12 resource sets
 ├── handlers/
-│   └── request-handlers.ts            # Central tool execution dispatcher
+│   └── request-handlers.ts            # Central tool execution dispatcher with timeout guards
 ├── tools/
-│   ├── tool-registry.ts               # Tool definitions and listing (18 tools)
+│   ├── tool-registry.ts               # Tool definitions and listing (22 tools)
 │   ├── core-chaining-tools.ts         # Core chaining tool schemas (6 tools)
 │   ├── awesome-copilot-tools.ts       # Awesome Copilot tool schemas (2 tools)
 │   ├── sequential-thinking-tools.ts   # Sequential thinking tool schemas (2 tools)
 │   ├── time-management-tools.ts       # Time management tool schemas (2 tools)
 │   ├── prompt-resource-tools.ts       # Prompt/resource tool schemas (4 tools)
-│   └── validation-analysis-tools.ts   # Validation/analysis tool schemas (2 tools)
+│   ├── validation-analysis-tools.ts   # Validation/analysis tool schemas (2 tools)
+│   └── llm-tools.ts                   # LLM engine tool schemas (4 tools)
 └── resources/
-    ├── resource-registry.ts           # Resource definitions and handlers
-    ├── resource-definitions.ts        # Static resource metadata (13 resources)
+    ├── resource-registry.ts           # Resource registry dispatcher
+    ├── resource-definitions.ts        # Static resource metadata (17 resources)
     └── resource-handlers.ts           # Dynamic resource content generation
 ```
 
-### Building
+### Building & Testing
 
 ```bash
-npm run build    # Build TypeScript to JavaScript
-npm run dev      # Watch mode for development
-npm run clean    # Clean dist directory
-```
+# Build TypeScript to JavaScript
+npm run build
 
-### Testing
+# Run comprehensive end-to-end smoke test suite (22 tools, 17 resources)
+npm test
 
-#### Local Testing
-
-```bash
-node dist/index.js
+# Run live OpenRouter integration test (requires OPENROUTER_API_KEY)
+npm run test:llm
 ```
 
 ## Integration with Other MCP Servers

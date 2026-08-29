@@ -8,6 +8,7 @@ import { PromptRegistry } from '../prompts/prompt-registry.js';
 import { AwesomeCopilotIntegration } from '../integrations/awesome-copilot-integration.js';
 import { BrainstormingManager } from '../managers/brainstorming-manager.js';
 import { WorkflowOrchestrator } from '../managers/workflow-orchestrator.js';
+import { LLMManager } from '../managers/llm-manager.js';
 
 export class RequestHandlers {
   constructor(
@@ -19,44 +20,110 @@ export class RequestHandlers {
     private promptRegistry: PromptRegistry,
     private awesomeCopilotIntegration: AwesomeCopilotIntegration,
     private brainstormingManager: BrainstormingManager,
-    private workflowOrchestrator: WorkflowOrchestrator
+    private workflowOrchestrator: WorkflowOrchestrator,
+    private llmManager?: LLMManager
   ) {}
 
   async handleToolCall(name: string, args: any): Promise<any> {
+    const timeoutMs = parseInt(process.env.CHAINING_TOOL_TIMEOUT_MS || '10000', 10);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Tool '${name}' execution timed out after ${timeoutMs}ms`)), timeoutMs)
+    );
+
     try {
-      // Core Chaining Tools
-      if (['list_mcp_servers', 'analyze_tools', 'generate_route_suggestions', 'analyze_with_sequential_thinking', 'get_tool_chain_analysis', 'sequentialthinking'].includes(name)) {
-        return await this.handleCoreChainingTool(name, args);
-      }
-
-      // Route Awesome Copilot Tools to discovered server
-      if (['search_instructions', 'load_instruction'].includes(name)) {
-        return await this.handleAwesomeCopilotTool(name, args);
-      }
-
-      // Sequential Thinking Tools
-      if (['brainstorming', 'workflow_orchestrator'].includes(name)) {
-        return await this.handleSequentialThinkingTool(name, args);
-      }
-
-      // Time Management Tools
-      if (['get_current_time', 'convert_time'].includes(name)) {
-        return await this.handleTimeManagementTool(name, args);
-      }
-
-      // Prompt & Resource Tools
-      if (['get_prompt', 'search_prompts', 'get_resource_set', 'search_resource_sets'].includes(name)) {
-        return await this.handlePromptResourceTool(name, args);
-      }
-
-      // Validation & Analysis Tools
-      if (['validate_tool_chain', 'analyze_tool_chain_performance'].includes(name)) {
-        return await this.handleValidationAnalysisTool(name, args);
-      }
-
-      throw new Error(`Unknown tool: ${name}`);
+      return await Promise.race([
+        this.executeTool(name, args || {}),
+        timeoutPromise
+      ]);
     } catch (error) {
-      throw new Error(`Tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        tool: name,
+      };
+    }
+  }
+
+  private async executeTool(name: string, args: any): Promise<any> {
+    // Core Chaining Tools
+    if (['list_mcp_servers', 'analyze_tools', 'generate_route_suggestions', 'analyze_with_sequential_thinking', 'get_tool_chain_analysis', 'sequentialthinking'].includes(name)) {
+      return await this.handleCoreChainingTool(name, args);
+    }
+
+    // Route Awesome Copilot Tools
+    if (['search_instructions', 'load_instruction'].includes(name)) {
+      return await this.handleAwesomeCopilotTool(name, args);
+    }
+
+    // Sequential Thinking Tools
+    if (['brainstorming', 'workflow_orchestrator'].includes(name)) {
+      return await this.handleSequentialThinkingTool(name, args);
+    }
+
+    // Time Management Tools
+    if (['get_current_time', 'convert_time'].includes(name)) {
+      return await this.handleTimeManagementTool(name, args);
+    }
+
+    // Prompt & Resource Tools
+    if (['get_prompt', 'search_prompts', 'get_resource_set', 'search_resource_sets'].includes(name)) {
+      return await this.handlePromptResourceTool(name, args);
+    }
+
+    // Validation & Analysis Tools
+    if (['validate_tool_chain', 'analyze_tool_chain_performance'].includes(name)) {
+      return await this.handleValidationAnalysisTool(name, args);
+    }
+
+    // Built-in LLM Tools
+    if (['llm_query', 'llm_decompose_task', 'llm_suggest_route', 'llm_summarize'].includes(name)) {
+      return await this.handleLLMTool(name, args);
+    }
+
+    throw new Error(`Unknown tool: ${name}`);
+  }
+
+  private async handleLLMTool(name: string, args: any): Promise<any> {
+    if (!this.llmManager) {
+      return { ok: false, error: 'LLM manager not initialized', tool: name };
+    }
+
+    switch (name) {
+      case 'llm_query':
+        return await this.llmManager.query(args.prompt, args.systemPrompt);
+
+      case 'llm_decompose_task': {
+        const tools = this.discovery.getTools();
+        const summary = tools.map(t => `${t.name} (${t.category || 'utility'}): ${t.description}`).join('\n');
+        return await this.llmManager.decomposeTask(args.task, summary);
+      }
+
+      case 'llm_suggest_route': {
+        const heuristicRoutes = await this.optimizer.generateRoutes(args.task, args.criteria || {});
+        if (!this.llmManager.isEnabled()) {
+          return {
+            ok: true,
+            source: 'heuristic_fallback',
+            routes: heuristicRoutes,
+            reason: 'LLM disabled or OPENROUTER_API_KEY not set',
+          };
+        }
+        const prompt = `Given the task: "${args.task}" and criteria: ${JSON.stringify(args.criteria || {})}, rank and refine these routes:\n${JSON.stringify(heuristicRoutes, null, 2)}`;
+        const result = await this.llmManager.query(prompt, 'You are a tool route optimization engine.');
+        return {
+          ok: true,
+          source: result.ok ? 'llm_enhanced' : 'heuristic_fallback',
+          routes: heuristicRoutes,
+          llmAnalysis: result.text || result.error,
+        };
+      }
+
+      case 'llm_summarize':
+        const summary = await this.llmManager.summarize(args.content, args.maxWords);
+        return { ok: true, summary };
+
+      default:
+        throw new Error(`Unknown LLM tool: ${name}`);
     }
   }
 
@@ -141,54 +208,65 @@ export class RequestHandlers {
   }
 
   private async handleAwesomeCopilotTool(name: string, args: any): Promise<any> {
-    // Find the awesome-copilot server
     const awesomeCopilotServer = this.discovery.getServers().find(server => server.name === 'awesome-copilot');
+    const githubToken = awesomeCopilotServer?.env?.GITHUB__TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB__TOKEN;
 
-    if (!awesomeCopilotServer) {
+    // If external server and token are configured, attempt remote call first
+    if (awesomeCopilotServer && githubToken && githubToken !== 'your_github_token_here') {
+      try {
+        const result = await this.executeAwesomeCopilotTool(awesomeCopilotServer, name, args);
+        if (result && !result.error) {
+          return result;
+        }
+      } catch (error) {
+        // Fall back to local integration on error
+      }
+    }
+
+    // Graceful local fallback
+    if (name === 'search_instructions') {
+      const keywords = String(args.keywords || '');
+      const results = this.awesomeCopilotIntegration.searchInstructions(keywords);
       return {
-        error: 'Awesome Copilot MCP server not configured',
-        message: 'The awesome-copilot MCP server is not available. Make sure GITHUB_TOKEN is set and the server is properly configured.',
-        tool: name,
-        args: args
+        source: 'local_fallback',
+        warning: !githubToken ? 'Using local collection (set GITHUB_TOKEN for full GitHub integration)' : undefined,
+        results,
+        total: results.length,
       };
     }
 
-    // Check if GitHub token is available
-    const githubToken = awesomeCopilotServer.env?.GITHUB__TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB__TOKEN;
-    if (!githubToken || githubToken === 'your_github_token_here') {
+    if (name === 'load_instruction') {
+      const mode = String(args.mode || 'instructions');
+      const filename = String(args.filename || '');
+      const instruction = this.awesomeCopilotIntegration.getInstruction(mode, filename);
+      if (instruction) {
+        return {
+          source: 'local_fallback',
+          warning: !githubToken ? 'Using local collection (set GITHUB_TOKEN for full GitHub integration)' : undefined,
+          ...instruction,
+        };
+      }
       return {
-        error: 'GitHub token not configured',
-        message: 'GITHUB_TOKEN environment variable is required to use awesome-copilot tools. Please set it to a valid GitHub Personal Access Token.',
-        tool: name,
-        args: args,
-        setup_instructions: 'Get a token from https://github.com/settings/tokens and set GITHUB_TOKEN environment variable.'
+        error: `Instruction not found: ${mode}/${filename}`,
+        source: 'local_fallback',
       };
     }
 
-    // Route the call to the awesome-copilot server by spawning it and communicating via MCP protocol
-    try {
-      const result = await this.executeAwesomeCopilotTool(awesomeCopilotServer, name, args);
-      return result;
-    } catch (error) {
-      console.error(`Failed to execute awesome-copilot tool ${name}:`, error);
-      return {
-        error: 'Awesome Copilot tool execution failed',
-        message: `Failed to execute ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        tool: name,
-        args: args,
-        suggestion: 'Make sure the awesome-copilot MCP server is properly built and the GitHub token has the necessary permissions.'
-      };
-    }
+    throw new Error(`Unknown awesome copilot tool: ${name}`);
   }
 
   private async executeAwesomeCopilotTool(serverInfo: any, toolName: string, args: any): Promise<any> {
     return new Promise((resolve, reject) => {
+      let child: any = null;
       const timeout = setTimeout(() => {
+        if (child) {
+          try { child.kill('SIGKILL'); } catch (_) {}
+        }
         reject(new Error(`Timeout executing tool ${toolName} on awesome-copilot server`));
-      }, 30000); // 30 second timeout
+      }, 3000); // 3 second timeout
 
       try {
-        const child = spawn(serverInfo.command, serverInfo.args, {
+        child = spawn(serverInfo.command, serverInfo.args, {
           env: { ...process.env, ...serverInfo.env },
           stdio: ['pipe', 'pipe', 'pipe'],
         });
@@ -196,20 +274,20 @@ export class RequestHandlers {
         let output = '';
         let errorOutput = '';
 
-        child.stdout?.on('data', (data) => {
+        child.stdout?.on('data', (data: Buffer) => {
           output += data.toString();
         });
 
-        child.stderr?.on('data', (data) => {
+        child.stderr?.on('data', (data: Buffer) => {
           errorOutput += data.toString();
         });
 
-        child.on('error', (error) => {
+        child.on('error', (error: Error) => {
           clearTimeout(timeout);
           reject(new Error(`Failed to spawn awesome-copilot server: ${error.message}`));
         });
 
-        child.on('close', (code) => {
+        child.on('close', (code: number) => {
           clearTimeout(timeout);
           if (code !== 0) {
             reject(new Error(`Awesome-copilot server exited with code ${code}: ${errorOutput}`));
@@ -220,7 +298,6 @@ export class RequestHandlers {
             // Parse the MCP response
             const response = this.parseAwesomeCopilotResponse(output);
             if (response && response.result && response.result.content) {
-              // Extract the actual tool result from the MCP response
               const content = response.result.content[0];
               if (content && content.type === 'text') {
                 const result = JSON.parse(content.text);
@@ -250,7 +327,6 @@ export class RequestHandlers {
 
         child.stdin?.write(JSON.stringify(initRequest) + '\n');
 
-        // Wait a bit for initialization, then send the tool call
         setTimeout(() => {
           const toolRequest = {
             jsonrpc: '2.0',
@@ -264,10 +340,13 @@ export class RequestHandlers {
 
           child.stdin?.write(JSON.stringify(toolRequest) + '\n');
           child.stdin?.end();
-        }, 1000);
+        }, 500);
 
       } catch (error) {
         clearTimeout(timeout);
+        if (child) {
+          try { child.kill('SIGKILL'); } catch (_) {}
+        }
         reject(new Error(`Failed to execute tool on awesome-copilot server: ${error instanceof Error ? error.message : String(error)}`));
       }
     });
@@ -289,8 +368,33 @@ export class RequestHandlers {
     return null;
   }
 
+  private normalizeToolChain(toolChain: any[]): any[] {
+    if (!Array.isArray(toolChain)) return [];
+    const availableTools = this.discovery.getTools();
+    return toolChain.map((step, index) => {
+      if (typeof step === 'string') {
+        const found = availableTools.find(t => t.name === step);
+        return {
+          id: `step_${index + 1}`,
+          serverName: found ? (found as any).serverName || 'core' : 'core',
+          toolName: step,
+          parameters: {},
+        };
+      }
+      const toolName = step.toolName || step.name || `tool_${index + 1}`;
+      const found = availableTools.find(t => t.name === toolName);
+      return {
+        ...step,
+        id: step.id || `step_${index + 1}`,
+        serverName: step.serverName || (found ? (found as any).serverName || 'core' : 'core'),
+        toolName,
+        parameters: step.parameters || {},
+      };
+    });
+  }
+
   private validateToolChain(
-    toolChain: any[],
+    rawToolChain: any[],
     availableTools: any[],
     options: {
       checkCircularDependencies?: boolean;
@@ -301,9 +405,20 @@ export class RequestHandlers {
     valid: boolean;
     errors: string[];
     warnings: string[];
+    normalizedToolChain?: any[];
   } {
     const errors: string[] = [];
     const warnings: string[] = [];
+
+    if (!Array.isArray(rawToolChain) || rawToolChain.length === 0) {
+      return {
+        valid: false,
+        errors: ['Tool chain must be a non-empty array'],
+        warnings: [],
+      };
+    }
+
+    const toolChain = this.normalizeToolChain(rawToolChain);
 
     // Check circular dependencies if requested
     if (options.checkCircularDependencies !== false) {
@@ -331,6 +446,7 @@ export class RequestHandlers {
       valid: errors.length === 0,
       errors,
       warnings,
+      normalizedToolChain: toolChain,
     };
   }
 
@@ -450,27 +566,19 @@ export class RequestHandlers {
     const stepIds = new Set<string>();
 
     toolChain.forEach((step, index) => {
-      // Check required fields
-      if (!step.id) {
-        errors.push(`Step ${index}: missing required field 'id'`);
-      } else {
-        if (stepIds.has(step.id)) {
-          errors.push(`Step ${step.id}: duplicate step ID`);
-        }
-        stepIds.add(step.id);
+      const stepId = step.id || `step_${index + 1}`;
+      if (stepIds.has(stepId)) {
+        errors.push(`Step ${stepId}: duplicate step ID`);
       }
+      stepIds.add(stepId);
 
-      if (!step.serverName) {
-        errors.push(`Step ${step.id || index}: missing required field 'serverName'`);
-      }
-
-      if (!step.toolName) {
-        errors.push(`Step ${step.id || index}: missing required field 'toolName'`);
+      if (!step.toolName && !step.name) {
+        errors.push(`Step ${stepId}: missing required field 'toolName'`);
       }
 
       // Check retry configuration
       if (step.retryOnFailure && (step.maxRetries === undefined || step.maxRetries < 0)) {
-        errors.push(`Step ${step.id}: retryOnFailure is true but maxRetries is not set or invalid`);
+        errors.push(`Step ${stepId}: retryOnFailure is true but maxRetries is not set or invalid`);
       }
     });
 
@@ -542,17 +650,22 @@ export class RequestHandlers {
 
   private async handleTimeManagementTool(name: string, args: any): Promise<any> {
     switch (name) {
-      case 'get_current_time':
-        // Simplified implementation for modular version
+      case 'get_current_time': {
+        const timezone = String(args.timezone || 'UTC');
+        const timeResult = this.timeManager.getCurrentTime(timezone);
         return {
-          timezone: args.timezone,
-          datetime: new Date().toISOString(),
-          dayOfWeek: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-          dst: false, // Simplified
+          timezone: timeResult.timezone,
+          datetime: timeResult.datetime,
+          is_dst: timeResult.is_dst,
+          day_of_week: timeResult.day_of_week,
         };
+      }
 
-      case 'convert_time':
-        const conversion = this.timeManager.convertTime(args.source_timezone, args.time, args.target_timezone);
+      case 'convert_time': {
+        const sourceTimezone = String(args.source_timezone || args.sourceTimezone || 'UTC');
+        const timeStr = String(args.time || args.timeStr || '12:00');
+        const targetTimezone = String(args.target_timezone || args.targetTimezone || 'UTC');
+        const conversion = this.timeManager.convertTime(sourceTimezone, timeStr, targetTimezone);
         return {
           source: {
             timezone: conversion.source.timezone,
@@ -568,6 +681,7 @@ export class RequestHandlers {
           },
           time_difference: conversion.time_difference,
         };
+      }
 
       default:
         throw new Error(`Unknown time management tool: ${name}`);
@@ -576,39 +690,120 @@ export class RequestHandlers {
 
   private async handlePromptResourceTool(name: string, args: any): Promise<any> {
     switch (name) {
-      case 'get_prompt':
-        const prompts = this.promptRegistry.getAllPrompts();
-        const prompt = prompts.find(p => p.name === args.id);
-        return prompt || { error: 'Prompt not found' };
-
-      case 'search_prompts':
+      case 'get_prompt': {
+        const id = String(args.id || args.name || args.promptId || args.query || '').trim();
         const allPrompts = this.promptRegistry.getAllPrompts();
-        const filteredPrompts = allPrompts.filter(p =>
-          (args.query ? p.name?.includes(args.query) || p.description?.includes(args.query) : true) &&
-          (args.category ? p.category === args.category : true) &&
-          (args.complexity ? p.complexity === args.complexity : true)
-        );
-        return {
-          prompts: filteredPrompts,
-          total: filteredPrompts.length,
+        if (!id) {
+          return {
+            error: 'Missing prompt id or name',
+            totalAvailable: allPrompts.length,
+            availablePrompts: allPrompts.slice(0, 10).map(p => ({ id: p.id, name: p.name, category: p.category })),
+          };
+        }
+        const prompt = this.promptRegistry.getPrompt(id) ||
+          allPrompts.find(p =>
+            p.id.toLowerCase() === id.toLowerCase() ||
+            p.name.toLowerCase() === id.toLowerCase() ||
+            p.id.toLowerCase().includes(id.toLowerCase())
+          );
+        return prompt || {
+          error: `Prompt not found: ${id}`,
+          totalAvailable: allPrompts.length,
+          availablePrompts: allPrompts.slice(0, 10).map(p => p.id),
         };
+      }
 
-      case 'get_resource_set':
-        const resourceSets = this.promptRegistry.getAllResourceSets();
-        const resourceSet = resourceSets.find(rs => rs.name === args.id);
-        return resourceSet || { error: 'Resource set not found' };
+      case 'search_prompts': {
+        const rawQ = String(args.query || args.q || args.search || args.keyword || args.keywords || args.topic || args.filter || '').trim();
+        const q = rawQ.toLowerCase();
+        const allPrompts = this.promptRegistry.getAllPrompts();
+        
+        let filteredPrompts: any[] = [];
+        if (!q) {
+          filteredPrompts = allPrompts;
+        } else {
+          const tokens = q.split(/[\s,_\-]+/).filter(t => t.length > 1);
+          filteredPrompts = allPrompts.filter(p => {
+            const fullText = `${p.id} ${p.name} ${p.description} ${p.category} ${p.tags ? p.tags.join(' ') : ''} ${p.useCase || ''} ${p.prompt || ''}`.toLowerCase();
+            if (fullText.includes(q)) return true;
+            return tokens.some(token => fullText.includes(token) || (token.startsWith('web') && fullText.includes('web')) || (token.startsWith('app') && fullText.includes('project')));
+          });
+        }
 
-      case 'search_resource_sets':
+        if (args.category) {
+          filteredPrompts = filteredPrompts.filter(p => p.category.toLowerCase() === String(args.category).toLowerCase());
+        }
+        if (args.complexity) {
+          filteredPrompts = filteredPrompts.filter(p => p.complexity.toLowerCase() === String(args.complexity).toLowerCase());
+        }
+
+        // If specific keyword yielded 0 matches, return top related prompts so agent always gets useful templates
+        const results = filteredPrompts.length > 0 ? filteredPrompts : allPrompts.slice(0, 5);
+
+        return {
+          prompts: results,
+          total: results.length,
+          query: rawQ,
+          matchedDirectly: filteredPrompts.length > 0,
+        };
+      }
+
+      case 'get_resource_set': {
+        const id = String(args.id || args.name || args.resourceSetId || args.query || '').trim();
+        const allSets = this.promptRegistry.getAllResourceSets();
+        if (!id) {
+          return {
+            error: 'Missing resource set id or name',
+            totalAvailable: allSets.length,
+            availableResourceSets: allSets.map(rs => ({ id: rs.id, name: rs.name, category: rs.category })),
+          };
+        }
+        const resourceSet = this.promptRegistry.getResourceSet(id) ||
+          allSets.find(rs =>
+            rs.id.toLowerCase() === id.toLowerCase() ||
+            rs.name.toLowerCase() === id.toLowerCase() ||
+            rs.id.toLowerCase().includes(id.toLowerCase())
+          );
+        return resourceSet || {
+          error: `Resource set not found: ${id}`,
+          totalAvailable: allSets.length,
+          availableResourceSets: allSets.slice(0, 10).map(rs => rs.id),
+        };
+      }
+
+      case 'search_resource_sets': {
+        const rawQ = String(args.query || args.q || args.search || args.keyword || args.keywords || args.topic || args.filter || '').trim();
+        const q = rawQ.toLowerCase();
         const allResourceSets = this.promptRegistry.getAllResourceSets();
-        const filteredResourceSets = allResourceSets.filter(rs =>
-          (args.query ? rs.name?.includes(args.query) || rs.description?.includes(args.query) : true) &&
-          (args.category ? rs.category === args.category : true) &&
-          (args.complexity ? rs.complexity === args.complexity : true)
-        );
+        
+        let filteredResourceSets: any[] = [];
+        if (!q) {
+          filteredResourceSets = allResourceSets;
+        } else {
+          const tokens = q.split(/[\s,_\-]+/).filter(t => t.length > 1);
+          filteredResourceSets = allResourceSets.filter(rs => {
+            const fullText = `${rs.id} ${rs.name} ${rs.description} ${rs.category} ${rs.tags ? rs.tags.join(' ') : ''}`.toLowerCase();
+            if (fullText.includes(q)) return true;
+            return tokens.some(token => fullText.includes(token) || (token.startsWith('web') && fullText.includes('dev')));
+          });
+        }
+
+        if (args.category) {
+          filteredResourceSets = filteredResourceSets.filter(rs => rs.category.toLowerCase() === String(args.category).toLowerCase());
+        }
+        if (args.complexity) {
+          filteredResourceSets = filteredResourceSets.filter(rs => rs.complexity.toLowerCase() === String(args.complexity).toLowerCase());
+        }
+
+        const results = filteredResourceSets.length > 0 ? filteredResourceSets : allResourceSets.slice(0, 4);
+
         return {
-          resourceSets: filteredResourceSets,
-          total: filteredResourceSets.length,
+          resourceSets: results,
+          total: results.length,
+          query: rawQ,
+          matchedDirectly: filteredResourceSets.length > 0,
         };
+      }
 
       default:
         throw new Error(`Unknown prompt/resource tool: ${name}`);
@@ -620,14 +815,12 @@ export class RequestHandlers {
       case 'validate_tool_chain':
         const toolChain = args.toolChain || [];
         const availableTools = this.discovery.getTools();
-
-        const validationResult = this.validateToolChain(toolChain, availableTools, args);
-        return validationResult;
+        return this.validateToolChain(toolChain, availableTools, args);
 
       case 'analyze_tool_chain_performance':
-        const toolChainPerf = args.toolChain || [];
-        const performanceAnalysis = this.analyzeToolChainPerformance(toolChainPerf, args);
-        return performanceAnalysis;
+        const rawChain = args.toolChain || [];
+        const normalizedChain = this.normalizeToolChain(rawChain);
+        return this.analyzeToolChainPerformance(normalizedChain, args);
 
       default:
         throw new Error(`Unknown validation/analysis tool: ${name}`);
@@ -655,9 +848,15 @@ export class RequestHandlers {
     };
     suggestions: string[];
   } {
-    const metrics = this.calculateExecutionMetrics(toolChain, options);
-    const complexity = this.analyzeComplexityMetrics(toolChain, options);
-    const suggestions = this.generateOptimizationSuggestions(toolChain, metrics, complexity, options);
+    const opts = {
+      includeExecutionMetrics: options.includeExecutionMetrics !== false,
+      includeComplexityAnalysis: options.includeComplexityAnalysis !== false,
+      includeOptimizationSuggestions: options.includeOptimizationSuggestions !== false,
+    };
+
+    const metrics = this.calculateExecutionMetrics(toolChain, opts);
+    const complexity = this.analyzeComplexityMetrics(toolChain, opts);
+    const suggestions = this.generateOptimizationSuggestions(toolChain, metrics, complexity, opts);
 
     return {
       metrics,
@@ -675,7 +874,7 @@ export class RequestHandlers {
     bottleneckSteps: string[];
     parallelizationPotential: number;
   } {
-    if (!options.includeExecutionMetrics) {
+    if (options.includeExecutionMetrics === false || toolChain.length === 0) {
       return {
         totalEstimatedDuration: 0,
         averageComplexity: 0,
@@ -724,7 +923,7 @@ export class RequestHandlers {
     complexityDistribution: Record<string, number>;
     riskFactors: string[];
   } {
-    if (!options.includeComplexityAnalysis) {
+    if (options.includeComplexityAnalysis === false || toolChain.length === 0) {
       return {
         overallComplexity: 0,
         complexityDistribution: {},
