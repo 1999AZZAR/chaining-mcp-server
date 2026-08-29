@@ -107,3 +107,6 @@ demo-servers/
 # Docker specific
 data/
 docker-compose.override.yml
+
+# Memory databases
+memory.db*
