@@ -1,7 +1,7 @@
 # Enterprise Chaining MCP Server
 
 
-> **Part of the [HeLa MCP Ecosystem](https://github.com/1999AZZAR/hela-mcp-ecosystem)** — This server is **HeLa Mitosis (`hela-mitosis`)** — the *Orchestrator* component of the HeLa cellular architecture. See the [ecosystem docs](https://github.com/1999AZZAR/hela-mcp-ecosystem) for profiles, workflows, and multi-client setup.
+> **Part of the [HeLa MCP Ecosystem](https://github.com/1999AZZAR/hela-hela-mcp-ecosystem)** — This server is **HeLa Mitosis (`hela-mitosis`)** — the *Orchestrator* component of the HeLa cellular architecture. See the [ecosystem docs](https://github.com/1999AZZAR/hela-hela-mcp-ecosystem) for profiles, workflows, and multi-client setup.
 
 A refined and unified Model Context Protocol (MCP) server that combines intelligent tool chaining, route optimization, sequential thinking, time management, development guidance, monitoring, analytics, security, and compliance capabilities. This server discovers available MCP servers on your system, analyzes their tools, validates tool chains, and provides a complete enterprise-grade toolkit for complex task execution with real awesome-copilot MCP server integration.
 
@@ -291,7 +291,7 @@ Add the chaining MCP server to your MCP client configuration (`~/.cursor/mcp.jso
   "mcpServers": {
     "chaining": {
       "command": "node",
-      "args": ["/path/to/chaining-mcp-server/dist/index.js"],
+      "args": ["/path/to/chaining-mcp/dist/index.js"],
       "env": {
         "CHAINING_TOOL_TIMEOUT_MS": "10000",
         "CHAINING_LLM_ENABLED": "true",
@@ -308,7 +308,7 @@ Add the chaining MCP server to your MCP client configuration (`~/.cursor/mcp.jso
 }
 ```
 
-**Note:** Replace `/path/to/chaining-mcp-server` with your actual path to the chaining-mcp-server directory.
+**Note:** Replace `/path/to/chaining-mcp` with your actual path to the chaining-mcp directory.
 
 **Important:** 
 - `OPENROUTER_API_KEY`: Required if `CHAINING_LLM_ENABLED` is `true`. Automatically uses `openrouter/free` and falls back to `openrouter/auto`.
