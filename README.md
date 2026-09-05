@@ -1,7 +1,7 @@
 # Enterprise Chaining MCP Server
 
 
-> **Part of the [HeLa MCP Ecosystem](https://github.com/1999AZZAR/hela-hela-mcp-ecosystem)** — This server is **HeLa Mitosis (`hela-mitosis`)** — the *Orchestrator* component of the HeLa cellular architecture. See the [ecosystem docs](https://github.com/1999AZZAR/hela-hela-mcp-ecosystem) for profiles, workflows, and multi-client setup.
+> **Part of the [HeLa MCP Ecosystem](https://github.com/1999AZZAR/hela-mcp-ecosystem)** — This server is **HeLa Mitosis (`hela-mitosis`)** — the *Orchestrator* component of the HeLa cellular architecture. See the [ecosystem docs](https://github.com/1999AZZAR/hela-mcp-ecosystem) for profiles, workflows, and multi-client setup.
 
 A refined and unified Model Context Protocol (MCP) server that combines intelligent tool chaining, route optimization, sequential thinking, time management, development guidance, monitoring, analytics, security, and compliance capabilities. This server discovers available MCP servers on your system, analyzes their tools, validates tool chains, and provides a complete enterprise-grade toolkit for complex task execution with real awesome-copilot MCP server integration.
 
