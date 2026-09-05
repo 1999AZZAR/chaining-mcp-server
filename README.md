@@ -969,6 +969,8 @@ console.log(llmStatus, llmUsage);
 | `CHAINING_LLM_BASE_URL` | `https://openrouter.ai/api/v1` | OpenRouter or OpenAI-compatible endpoint URL |
 | `CHAINING_LLM_MAX_TOKENS` | `1024` | Maximum tokens per internal generation request |
 | `CHAINING_LLM_TIMEOUT_MS` | `4000` | AbortController timeout for LLM network requests |
+| `CHAINING_LLM_APP_NAME` | `hela-mitosis` | OpenRouter `X-Title` app attribution |
+| `CHAINING_LLM_APP_URL` | `https://github.com/1999AZZAR/hela-mcp-ecosystem` | OpenRouter `HTTP-Referer` app attribution |
 | `GITHUB_TOKEN` | *optional* | Personal access token for remote GitHub instruction syncing |
 | `DISABLE_THOUGHT_LOGGING` | `false` | When true, suppresses terminal thought rendering in sequential thinking |
 | `MCP_DISCOVERY_CONFIG_PATHS` | *auto* | JSON array of paths to custom MCP config files |
